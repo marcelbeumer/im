@@ -1,0 +1,21 @@
+<p>
+    im.selector features a very small (~ 200 lines of actual code) CSS selector engine that can do most common CSS selection tasks; a very small subset of what full blown CSS selector engines support. For comfort: the performance of the IM selector engine is up to par with jQuery's Sizzle library (one of the fastest on the market).
+</p>
+
+<p>
+    im.selector supports the following type of selectors, and any combination of them:
+</p>
+<ul>
+    <li>node name: 'span'</li>
+    <li>class name: '.button'</li>
+    <li>node and class name: 'span.button'</li>
+    <li>descendants: 'div p span'</li>
+    <li>child nodes: 'div > p > span'</li>
+    <li>multiple selectors: 'div, span'</li>
+    <li>id: '#singleton'</li>
+</ul>
+
+<xmp class="code auto">var allDiv = im('div'); // all divs in the document
+var buttons = im('a.button'); // all anchors with class button
+var widgets = im('p > .widget-a, p > .widget-b'); // widget-a and widget-b inside paragraphs
+var widgetSpansAndStrongs = widgets.find('span, strong'); // spans and strongs inside the widgets</xmp>

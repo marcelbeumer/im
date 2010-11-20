@@ -1,0 +1,99 @@
+<p>
+    The more complex pages or applications get, the more important it is to take time to design the way a page loads. It is often not good enough to just throw everything in a document onready, onload (or im.scan). A page initialization setup can differ from project to project.
+</p>
+
+<p>This page does not cover this topic in the length and depth it deserves, but should at least give an impression on the considerations to make when thinking about page/application initialization code.</p>
+
+<h2>Thinking in components</h2>
+
+<p>
+    When you take a abstract view of your page, you can identify components. Let's take the following page as an example:
+</p>
+
+<img src="images/ns-site.png"/>
+
+<p>
+    Now let's identify what components we have (and use our imagination a bit ;):
+</p>
+
+<ul>
+    <li><strong>The main menu bar</strong> - has separate mouseover and click event handling</li>
+    <li><strong>The bottom menu bar</strong> - has separate mouseover and click event handling</li>
+    <li><strong>The alternating background</strong> with it's read more ('lees verder') button</li>
+    <li><strong>The travel planner box</strong></li>
+    <li>Some elements/widgets that can be on any part of the page (we don't see any, but there might be)</li>
+</ul>
+
+<h2>Translating components to an initialization setup</h2>
+
+<p>
+    It is often good practice to give each component (but not the inner workings/elements of a component) a seperate <a href="#" class="doc-link" doc-path="api.events.functions.onready">onready</a> event handler or <a href="#" class="doc-link" doc-path="api.scan">scan</a> handler. In this example we use <a href="#" class="doc-link" doc-path="api.scan">im.scan</a>.
+</p> 
+
+<p>As we are using im.scan, we make sure we scan onready</p>
+
+<xmp class="code auto">im.onready(function(){
+    im.scan('onready'); // trigger a scan onready
+});</xmp>
+
+<p>
+
+<p>Then we define a trigger for each component</p>
+
+<xmp class="code auto">im.scan.register('onready', '.main-menu', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+});
+
+im.scan.register('onready', '.bottom-menu', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+});
+
+im.scan.register('onready', '.homepage-background', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+});
+
+im.scan.register('onready', '.travel-planner', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+});
+
+im.scan.register('onready', 'content', 'div.tooltip', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+});</xmp>
+
+<p>Using this setup we have separated the initialization of each component. Inside the component initialization setup, it is then fine to do CSS selectors, event binding or anything required without mixing code or creating a lot of im.scan triggers:</p>
+
+<xmp class="code auto">...
+    
+im.scan.register('onready', 'content', 'div.tooltip', function(){
+    // initialize the component by doing CSS selection, adding event handlers, etc...
+    var text = im(this).find('.tooltip-text').html();
+    im(this).bind('mouseover', function(){
+        // show tooltip, ...
+    });
+    ...
+});</xmp>
+
+<h2>Doing the same with just onready handlers</h2>
+
+<p>In a lot of cases it is advised to use <a href="#" class="doc-link" doc-path="api.scan">im.scan</a>, but you can do the same thing with a plain onready handler.</p>
+
+<xmp class="code auto">
+var onready = function() {
+    initMainMenu(im('.main-menu')); 
+    // or im('.main-menu').mainMenu() in case you created a plugin.
+    initBottomMenu(im('.bottom-menu')); 
+    // or im('.bottom-menu').bottomMenu() in case you created a plugin.
+    initHomepageBackground(im('.homepage-background')); // or ...
+    initTravelPlanner(im('.travel-planner')); // or ...    
+};
+
+// stuff that also needs to be done for dynamic content
+var oncontent = function() {
+    initTooltip(im('.div.tooltip')); // or ...    
+};
+
+im.onready(function(){
+    onready();
+    oncontent();
+});
+</xmp>

@@ -1,0 +1,14 @@
+<p>
+    IM is pretty fast. However, as with any framework, abstraction often comes as a trade-off with performance. You pay a few CPU cycles for short, pretty and maintainable code.
+</p>
+
+<p>
+Please feel free to use IM where ever it will result in shorter, more readable code. In most cases performance is important, but will not require you to sqeeze out every CPU cycle possibe. In very few cases you need to write framework-less JavaScript code to get things really fast. In most cases you will not notice the overhead of a framework.
+</p>
+
+<p>That said, just know that:</p>
+<ul>
+    <li>When doing an im.each on a large set (thousands), IM will do a function call on each item.</li>
+    <li>CSS selectors (im('span'), or im.selectNodes) are fast, but it is not some magic algorithm. It will actually walk through the DOM looking for your nodes. So im(widgetElement).find('span.button') is faster than im('span.button') as it starts walking the DOM on a smaller scope.</li>
+    <li>You can always look at the source to see what a function is doing under the hood.</li>
+</ul>

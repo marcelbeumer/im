@@ -1,0 +1,44 @@
+/*body, pre{font-size: 14px;background-color:#fff;font-family:Courier;padding:0;margin:0;}*/
+
+body, pre{font-size: 14px;line-height:20px;font-family: "HelveticaNeue-Light", 'Helvetica Neue Light', 'Helvetica Neue', Arial, sans-serif;font-weight:300;color:#242424;}
+a, a:hover, a:visited,a:active{color:#3851B0;text-decoration:underline;}
+strong{font-weight:bold;}
+
+h1{font-size:2em;margin-top:0;margin-bottom:40px;}
+h2{font-size:1.5em;}
+.code{width:680px;}
+.api-source {height:600px;}
+
+.main {width:960px;margin:0 auto;}
+
+.header{text-indent:-5000px;width:150px;height:85px;margin:0;background:#fff url(images/logo.png) 0 0 no-repeat;}
+.header{position:relative;left:10px;margin-bottom:10px;}
+.logo{text-indent:-5000px;position:absolute;width:150px;height:85px;top:0;}
+
+.navi {float:left;width:160px;white-space:nowrap;position:relative;margin-left:5px;margin-top:5px;}
+.navi {padding-left:10px;padding-right:20px;font-size:12px;-webkit-border-radius:10px;-moz-border-radius:10px;}
+.navi {padding-top:75px;background: #242424 url(images/logo.png) 15px 15px no-repeat;border:1px solid #000;}
+.XXXnavi {-webkit-box-shadow: 0 0 10px #444;-moz-box-shadow: 0 0 10px #444;}
+.navi-inner{padding:20px 0;}
+.navi ul{margin:0;padding-left:10px;list-style-type:none;}
+.navi li, .navi li a{color:rgb(200,200,200);text-decoration:none;}
+.navi li.active > a{color:#fff;font-weight:bold;}
+.navi li > ul {display:none;}
+.navi li.open > ul {display:block;}
+.navi li.has-sub > a:after{content: ' +';font-size:10px;}
+.navi li.has-sub.open > a:after{content: ' -';}
+.navi .expand-all{color:rgb(200,200,200);text-decoration:none;font-size:11px;position:absolute;right:10px;bottom:2px;}
+.navi .expand-all:hover{color:#fff;}
+
+.content{xwidth:800px;margin-left:220px;padding:41px 20px 20px 0;}
+
+.code-viewer{width:680px;overflow:hidden;}
+.code-viewer > div{line-height:20px;}
+.code-viewer > div:after {content: ".";display: block;height: 0;clear: both;visibility: hidden;}
+.code-viewer-all{border:1px solid #ccc;}
+.code-viewer .view-all{display:block;clear:left;font-size:10px;color:blue;}
+.code-viewer * {font-family:Lucida Console, Monaco, monospace;font-size:12px;color:#606060;}
+.code-viewer .current pre{background-color:#ccc;}
+.code-viewer span, .code-viewer pre{height:20px;}
+.code-viewer span{float:left;clear:left;width:30px;background-color:#999;font-size:10px;text-align:center;}
+.code-viewer pre{display:inline;margin:0;padding:0;margin-left:10px;}

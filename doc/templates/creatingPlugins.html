@@ -1,0 +1,38 @@
+<p>
+    IM can be easily extended with so-called plugins, very much the same as jQuery allows writing plugins. You can create both custom IM functions and custom IM chains.
+</p>
+
+<h2>Creating custom functions</h2>
+
+<p>Creating custom functions is as easy as adding a property to the 'im' object:</p>
+
+<xmp class="code auto">(function(){
+    im.custom = function(element) {
+        // do something
+    };
+})();</xmp>
+
+<h2>Creating custom chains</h2>
+
+<p>Creating custom chains is as easy as adding a property to the 'im.chains' object:</p>
+
+<xmp class="code auto">(function(){
+    im.chains.redBorder = function() {
+        for (var x = 0; x < this.length; x++) {
+            // do something with this[x]
+            this[x].style.border = '1px solid red';
+        }
+        return this; // don't forget or you will break the chain
+    };
+    
+    im.chains.padding = function(value) {
+        if (value || value == '') { // setting
+            for (var x = 0; x < this.length; x++) {
+                this[x].style.padding = value; // set padding for each item in the chain
+            }
+            return this; // don't break the chain
+        } else if (this.length > 0){
+            return this[0].style.padding; // break the chain when getting
+        }
+    }
+})();</xmp>

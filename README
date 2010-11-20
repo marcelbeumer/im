@@ -1,0 +1,14 @@
+= IM =
+
+== using IM in your project ==
+take dist/im.js and/or dist/im.min.js
+
+== making a build ==
+cd to 'build'
+./build.sh
+
+== checking out the documentation ==
+open doc/index.html in your browser
+
+== checking out the plugins ==
+view the source in plugins

@@ -1,0 +1,124 @@
+<p>
+    For larger apps you will often find yourself doing a lot of CSS selectors 'onready' initializing your widgets and other UI elements. In such cases im.scan is an optimized way to trigger this initializing code.
+</p>
+
+<p>
+    CSS selectors are very fast in what they do: executing a <strong>single</strong> CSS selection. However, the performance hit will add up when you do a lot of them after each other, especially when doing so on the entire document structure. This is where im.scan comes in. The im.scan library does a <strong>single run</strong> on a DOM structure <strong>for multiple selectors</strong>, taking some overhead in doing a more expensive 'DOM walk', but gaining speed by just doing it once. Additionally, im.scan can <strong>skip parts of the DOM</strong> you don't want to scan.
+</p>
+
+<p>
+    Using just a CSS selector engine is faster in cases where you just do a few (~10?) CSS selectors when loading your page, and im.scan is faster when doing more, and in all cases im.scan is more predicatable and therefore more managable in a project.
+</p>
+
+<p>
+    <strong>IMPORTANT:</strong> The im.scan selector engine is very basic and does only support the following type of CSS selectors:
+</p>
+<ul>
+    <li>node name: 'span', or 'body' (the latter when you want to be sure that something happens only once)</li>
+    <li>class name:  '.button'</li>
+    <li>class names:  '.button.special'</li>
+    <li>node and class name(s): 'span.button'</li> 
+</ul>
+
+<h2>Your page onready code</h2>
+
+<p>
+See below a typical jQuery-like situation where you have a lot of widget/plugin initialization code 'onready':
+</p>
+
+<xmp class="code auto">
+    im(function(){ // onready
+        im('widget-a').widgetA();
+        im('widget-b').widgetB();
+        im('widget-c').widgetC();
+        im('widget-d').widgetD();
+        im('widget-e').widgetE();
+        // and so on...
+    });
+</xmp>
+
+<p>
+This can rewritten using im.scan:
+</p>
+
+<xmp class="code auto">
+    im.scan.register('onready', '.widget-a', function(){im(this).widgetA();});
+    im.scan.register('onready', '.widget-b', function(){im(this).widgetB();});
+    im.scan.register('onready', '.widget-c', function(){im(this).widgetC();});
+    im.scan.register('onready', '.widget-d', function(){im(this).widgetD();});
+    im.scan.register('onready', '.widget-e', function(){im(this).widgetE();});
+    
+    im(function(){ // onready
+        im.scan('onready');
+    });
+</xmp>
+
+<p>Please see the rest of the API reference for more details.</p>
+
+<h2>Easily initialize dynamic content</h2>
+
+<p>
+Because you basically catagorize initialitation code with im.scan, triggering the right initialization code for
+dynamic content becomas easy.
+</p>
+
+<xmp class="code auto">
+    /* 
+    widget a and b can also manifest in dynamic content, and therefore we register not
+    only at type onready, but also as 'content' (you are free to make up your own type names).
+    */
+    im.scan.register('onready', 'content', '.widget-a', function(){im(this).widgetA();});
+    im.scan.register('onready', 'content', '.widget-b', function(){im(this).widgetB();});
+    im.scan.register('onready', '.widget-c', function(){im(this).widgetC();});
+    im.scan.register('onready', '.widget-d', function(){im(this).widgetD();});
+    im.scan.register('onready', '.widget-e', function(){im(this).widgetE();});
+    
+    im(function(){ // onready
+        im.scan('onready');
+    });
+    
+    var loadContentWithXHR = function(element, url) {
+        var data = ... // ajax call
+        im(element).html(data);
+        /*
+        do a scan triggering 'content' types, but only for the structure of 
+        the element (not the entire page)
+        */
+        im.scan('content', element); 
+    };
+</xmp>
+
+<h2>Working with a huge DOM: skipping parts of the tree</h2>
+
+<p>
+    Sometimes you work with very large DOM structures that take a lot of time to walk on, or you just want some control and skip parts of the DOM:
+</p>
+
+<xmp class="code auto">
+    <!DOCTYPE "html">
+    <html>
+        <head>
+            <script src="im.min.js"></script>
+            <script src="myApp.js"></script>
+        </head>
+        <body>
+            <div>
+                <p>
+                    Lorem ipsum dolor sit amet.
+                </p>
+                <p class="scan-stop">
+                    IMAGINE LARGE DOM STRUCTURE HERE
+                    <span>lorem</span><span>lorem</span><span>lorem</span><span>lorem</span><span>lorem</span>
+                    <span>lorem</span><span>lorem</span><span>lorem</span><span>lorem</span><span>lorem</span>
+                    Lorem ipsum dolor sit amet.
+                </p>
+            </div>
+        </body>
+    </html>
+</xmp>
+
+<p>
+    By adding the class <strong>'scan-stop'</strong> on an element, im.scan will not scan that node or any of its descendants.
+    If you know you never want to walk a part of the DOM, it makes sense to add a 'scan-stop'.
+</p>
+    

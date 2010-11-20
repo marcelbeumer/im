@@ -1,0 +1,48 @@
+<p>
+    The code below will include IM and give all paragraph elements a mouseenter/mouseleave effect.
+</p>
+<p>
+    <strong>IMPORTANT:</strong> for larger apps you will often find yourself doing a lot of CSS selectors 'onready' initializing your widgets and other UI elements. In such cases there is an optimized way to trigger this initializing code using <a href="#" class="doc-link" doc-path="api.scan">im.scan</a>. Also, it is advised to take time to properly <a href="#" class="doc-link" doc-path="designPageLoad">design your page initialisation setup</a>.
+</p>
+
+<p>The HTML:</p>
+
+<xmp class="code auto">
+    <!DOCTYPE "html">
+    <html>
+        <head>
+            <script src="im.min.js"></script>
+            <script src="myApp.js"></script>
+        </head>
+        <body>
+            <div>
+                <p>
+                    Lorem ipsum dolor sit amet.
+                </p>
+                <p>
+                    Lorem ipsum dolor sit amet.
+                </p>
+            </div>
+        </body>
+    </html>
+</xmp>
+
+<p>myApp.js</p>
+
+<xmp class="code auto">
+    /* 
+    we typically execute our code onready (when the DOM is ready), rather than onload.
+    */
+    im.onready(function(){
+        im('p').bind('mouseenter', function(){
+            im(this).css({backgroundColor : 'red'});
+        }).bind('mouseleave', function(){
+            im(this).css({backgroundColor : 'blue'});            
+        });
+    });
+    
+    /* code above can also be writting with the shorthand for im.onready:
+    im(function(){
+       // code 
+    }); */
+</xmp>

@@ -1,0 +1,52 @@
+<!DOCTYPE "html">
+<html>
+    <head>
+        <script src="../../dist/im.js"></script>
+        <script src="../../plugins/im.dnd.js"></script>
+        <script src="../../plugins/im.console.js"></script>
+        <style>
+            .foo {
+                width:200px;
+                height:120px;
+                background-color:#c9c9c9;
+                border:10px solid #555;
+                color:#555;
+                -moz-border-radius:10px;
+                -webkit-border-radius:10px;
+                z-index:2;
+                text-align:center;
+                padding-top:80px;
+                cursor:move;
+            }
+        </style>
+        <script>
+            im(function(){
+                
+                im('.foo').bind('drag', function(e){
+                    im(this).css({
+                        position: 'absolute',
+                        left : im(this).offset().left + 'px', 
+                        top : im(this).offset().top + 'px'
+                    });
+                    im(this).animate({backgroundColor : '#444', color : '#fff'});
+                });
+                
+                im('.foo').bind('dragmove', function(e){
+                    im(this).css({
+                        left : (e.x + e.dragElementOffsetX) + 'px',
+                        top : (e.y + e.dragElementOffsetY) + 'px'
+                    });
+                });
+                
+                im('.foo').bind('drop', function(e){
+                    im(this).animate({backgroundColor : '#c9c9c9', color : '#555'});
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="foo" style="">
+            <p>drag me</p>
+        </div>
+    </body>
+</html>

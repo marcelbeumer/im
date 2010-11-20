@@ -1,0 +1,85 @@
+<p>
+    Chaining is based on the following JavaScript syntaxical capability:
+</p>
+
+<xmp class="code auto">var myfunc = function() {
+    return {x : 10};
+};
+alert(myfunc().x); // 10</xmp>
+
+<p>When you take this principle further:</p>
+
+<xmp class="code auto">
+var obj = {
+    funcA = function() {
+        return this;
+    },
+    funcB = function() {
+        return this;
+    },
+    funcC = function() {
+        alert(this.x);
+        return this;
+    }
+    x : 10
+};
+alert(obj.funcA().funcB().funcC().x); // alerts 10 twice
+</xmp>
+
+<p>Eventually you end up with something similar to IM/jQuery:</p>
+
+<xmp class="code auto">var obj = {
+    elements : []
+    hide = function() {
+        for (var x = 0; x < this.elements.length; x++) {
+            this.elements[x].display = 'none';
+        }
+        return this;
+    },
+};
+obj.elements = [elementA, elementB];
+obj.hide(); // hides both elements</xmp>
+
+<h2>How IM does it</h2>
+
+<p>
+IM has a special 'chain constructor' simple called im, that makes a new IM object and attaches all chaining functions on it. You can pass a single element, a bunch of nodes (in a array) or a CSS selector to the construtor so you have a chain that actually does things on DOM elements. Different from the short code sample above, IM stores it's elements on the chain as numbered properties, as if it was an array (but the chain is always just a plain object).
+</p>
+
+<xmp class="code auto">var chain = im(); // empty chain
+alert(im.show); // will alert function as the chain has the whole IM chain API as properties
+
+var spans = im('span'); // a CSS selector
+var single = im(element); // a DOM element
+var multi = im([elementA, elementB, elementC]); // multiple elements
+
+multi.hide() // hide the multiple elements
+
+/* 
+chains 'pretend' to be arrays, as IM stores elements on numbered properties and keeps track of
+it's own length property.
+*/
+
+alert(multi.length); // alerts 3
+alert(multi[0]); // alerts first element
+
+// the safe way to get an element from the fake array:
+alert(multi.el(10)); // returns undefined
+
+// or when you want to continue chaining:
+multi.item(0).hide(); // hides first element of multi chain.</xmp>
+
+<p>While chaining, you can change the selection of nodes that you work on, and you can jump back to previous 'states' of the chain:</p>
+
+<xmp class="code auto">
+    im('p')                                 // get all paragraphs
+        .item(0).hide()                     // change selection to first one, and hide it
+        .end()                              // jump back to previous state: all paragraphs
+        .bind('click', function(){          // set an event handler
+            alert('hi');
+        })
+        .find('span')                       // find all spans within all paragraphs
+        .css({color : '#000'})              // and change their color
+        .end()                              // jump back to all paragraphs
+        .css({border : '1px solid red'});   // and give them a nice border color
+</xmp>

@@ -1,0 +1,48 @@
+<p>
+    The IM API reference is split in two main parts: functions and chains. Functions are IM API calls that can be called directly. For example:
+</p>
+
+<xmp class="code auto">im.show(element);
+if (im.isString('mystring')) alert('i am a string');
+</xmp>
+
+<p>
+    <strong>Chains</strong> are functions that can be used when 'inside a chain'. Chains work exactly the same as in jQuery. Please consider the following code snippet:
+</p>
+
+<xmp class="code auto">// to demonstrate how chaining works we break up each step:
+
+var chain = im(element); // create chain
+chain.show(); // using im.chains.show instead of im.show
+chain = chain.find('a.button'); // find all ancors with class button and update the chain.
+chain.bind('click', function(){
+    alert('anchor button got clicked');
+});
+
+// but to utilize the power of chaining, the above is better written as:
+
+im(element).show().find('a.button').bind('click', function(){
+    alert('anchor button got clicked');
+});</xmp>
+
+<p>
+    An example of a bit more advanced chaining:
+</p>
+
+<xmp class="code auto">/*
+This code will:
+    - find all elements with class widget
+    - show them
+    - bind a click handler on each of them
+    - find all spans of each widget
+    - set a border on the spans
+    - set the chain back to the widgets (end)
+    - append a div to each of the widgets
+*/
+im('.widget').show().bind('click', function(){
+    im(this).hide();
+}).find('span').css({
+    border : '1px solid red'
+}).end().append('<div>...</div>');</xmp>
+
+
