@@ -196,6 +196,14 @@ im.core.js
     im.chains.end = function() {
         return this.__prev || im();
     };
+    
+    /* ---------------------------------------------------------------------------
+    chains.exec - simply executes a function with 'this' as the chain.
+    --------------------------------------------------------------------------- */
+    im.chains.exec = function(fn) {
+        fn.apply(this);
+        return this;
+    };
 
     /* ---------------------------------------------------------------------------
     chains.array - returns real array based on current chain.

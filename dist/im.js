@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "1.1.1";
+    var VERSION = "1.1.1-DEV";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -195,6 +195,14 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.chains.end = function() {
         return this.__prev || im();
+    };
+    
+    /* ---------------------------------------------------------------------------
+    chains.exec - simply executes a function with 'this' as the chain.
+    --------------------------------------------------------------------------- */
+    im.chains.exec = function(fn) {
+        fn.apply(this);
+        return this;
     };
 
     /* ---------------------------------------------------------------------------
