@@ -81,5 +81,16 @@ im('.element').async(1000)
         restoreChain(this);
         return this;
     };
+    
+    /* ---------------------------------------------------------------------------
+    chains.exec - simply executes a function with 'this' as the chain.
+    NOTE: in core for IM > 1.1.1, added it here for compatibility with IM 1.1.1.
+    --------------------------------------------------------------------------- */
+    if (!im.chains.exec) {
+        im.chains.exec = function(fn) {
+            fn.apply(this);
+            return this;
+        };
+    }
         
 })();
