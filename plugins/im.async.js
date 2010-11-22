@@ -32,9 +32,7 @@ im('.element').async(1000)
     var stubChain = function(obj, store) {
         var s = store;
         for (var name in im.chains) {
-            if (name != 'sync' && !obj.hasOwnProperty(name)) {
-                obj[name] = createMemorizer(name, s);
-            }
+            if (name != 'sync') obj[name] = createMemorizer(name, s);
         }
     };
     
