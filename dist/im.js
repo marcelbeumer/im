@@ -299,7 +299,7 @@ im.dom.js
     im.getAncestorOrSelf = function(nodeOrClassName, element){
         var match = false;
         if (nodeOrClassName.indexOf('.') == 0) {
-            if (im.hasClass(element.className, nodeOrClassName)) match = true;
+            if (im.hasClass(element.className, nodeOrClassName.substr(1))) match = true;
         } else {
             if (nodeOrClassName == element.nodeName.toLowerCase()) match = true;
         }
@@ -1037,8 +1037,8 @@ animation code based on http://github.com/madrobby/emile.
     
     /* ---------------------------------------------------------------------------
     im.animate - animates element to certain stylestring.
-        param el: element
-        param obj: object with style settings (just like im.css)
+        param el (optional): element
+        param obj (optional): object with style settings (just like im.css)
         param callback (optional): callback to execute when animation is done.
         param speed (optional): speed in milliseconds
         param easing (optional): custom easing function
@@ -1047,8 +1047,21 @@ animation code based on http://github.com/madrobby/emile.
                 // custom animation code
             }
             
-        Example: im.animate(el, {width : '200px'}, 200, function(){
-            alert('done!');
+        Examples: 
+        
+        // animate css properties and do a callback when done
+        im.animate(el, {width : '200px'}, 200, function(){
+            alert('done!'); // callback
+        });
+
+        // animate css properties, and some custom things
+        im.animate(el, {width : '200px'}, 200, null, null, function(p) {
+            this.setAttribute('rel', 'i have the width: ' + (p * 200));
+        });
+        
+        // do a completely custom animation, without a fixed set of elements
+        var interval = im.animate(null, null, null, null, null, function(p) {
+            console.info(p); // completely custom animation.
         });
     
     WARNING: when animating color, please use hex or rgb. Color names 
@@ -1059,11 +1072,15 @@ animation code based on http://github.com/madrobby/emile.
         // get current and target style
         var current = {};
         var target = {};
-        for (var prop in obj) {
-            var currentValue = im.css(el, prop);
-            if (currentValue == 'auto') currentValue = '0'; // we can't do anything with auto, really
-            current[prop] = parseRule(currentValue);
-            target[prop] = parseRule(obj[prop] + '', currentValue);
+        
+        // obj could be omitted in case of a bare customHandler setup
+        if (el && obj) {
+            for (var prop in obj) {
+                var currentValue = im.css(el, prop);
+                if (currentValue == 'auto') currentValue = '0'; // we can't do anything with auto, really
+                current[prop] = parseRule(currentValue);
+                target[prop] = parseRule(obj[prop] + '', currentValue);
+            }
         }
         
         var start = +new Date;
@@ -1076,14 +1093,16 @@ animation code based on http://github.com/madrobby/emile.
             var time = +new Date;
             var pos = time > finish ? 1 : (time - start) / dur;
             
-            var v, now = {};
-            for (var prop in obj) {
-                v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
-                now[prop] = v;
+            if (el && obj) {
+                var v, now = {};
+                for (var prop in obj) {
+                    v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
+                    now[prop] = v;
+                }
+                im.css(el, now);
             }
-            im.css(el, now);
             
-            if (customHandler) customHandler.apply(el, [easing(pos)]);
+            if (customHandler) customHandler.apply(el || window, [easing(pos)]);
             
             if (time >= finish) {
                 clearInterval(interval);
@@ -1093,11 +1112,16 @@ animation code based on http://github.com/madrobby/emile.
         interval = setInterval(step, 10);
         
         // store animation
-        var data = im.data(el, 'animations') || [];
-        data.push(interval);
-        im.data(el, 'animations', data);
-    };
+        if (el) {
+            var data = im.data(el, 'animations') || [];
+            data.push(interval);
+            im.data(el, 'animations', data);
+        }
         
+        // return interval, in case one would like to control it.
+        return interval;
+    };
+    
     /* ---------------------------------------------------------------------------
     chains.animate - wraps im.animate
     --------------------------------------------------------------------------- */

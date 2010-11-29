@@ -28,7 +28,7 @@ im.dom.js
     im.getAncestorOrSelf = function(nodeOrClassName, element){
         var match = false;
         if (nodeOrClassName.indexOf('.') == 0) {
-            if (im.hasClass(element.className, nodeOrClassName)) match = true;
+            if (im.hasClass(element.className, nodeOrClassName.substr(1))) match = true;
         } else {
             if (nodeOrClassName == element.nodeName.toLowerCase()) match = true;
         }
