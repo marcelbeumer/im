@@ -1333,6 +1333,7 @@ so it will not check the location in the DOM!
     var AXISCHILD = 1;
     
     var bitCache = {};
+    var resultCache = {};
 
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
@@ -1466,14 +1467,61 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    --------------------------------------------------------------------------- */
+    var getCacheResultKey = function(context, selector) {
+        var k = '', l = context.length;
+        while (l--) k += im.getUUID(context[l]) + ':';
+        return k + selector;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    --------------------------------------------------------------------------- */
+    var getResultCache = function(context, selector) {
+        var key = getCacheResultKey(context, selector);
+        return resultCache[key];
+    };
+    
+    /* ---------------------------------------------------------------------------
+    --------------------------------------------------------------------------- */
+    var addResultCache = function(context, selector, result) {
+        var key = getCacheResultKey(context, selector);
+        resultCache[key] = result;
+    };
+    
+    /* ---------------------------------------------------------------------------
     im.selectNodes - selectNodes from provided context
-        param selector: cssSelector
-        param context (optional): element (defaults to document.body)
+        param selector: cssSelector (with optonal caching command prefix)
+        param context (optional): element or array of elements (defaults to document)
         param resultArr (optional): array to merge results in.
+        
+    About the caching command prefix:
+    
+    selectNodes supports caching using two keys: the concatenated UUID of all context
+    elements, and the selector. Caching can be controlled by adding a prefix to your
+    css selectors:
+        
+        '% .class' - auto mode
+        Return cached result, or create new cached result and return that.
+        '%! .class' - set mode
+        Create/overwrite new cached result, and return the new result.
+        '%? .class' - get mode
+        Return cached result, also when undefined.
+        
     --------------------------------------------------------------------------- */
     im.selectNodes = function(selector, context, resultArr) {
-        context = context || document;
-        if (!context) throw new Error('im.selectNodes - could not get context, are you are the DOM is ready?');
+        
+        // get contexts and make sure it is an array
+        var contexts = context ? (context.length ? context : [context]) : [document];
+        
+        // check if we need to utilize cache        
+        var cache = selector.match(/^(%[\?\!]?)(.*)/);
+        if (cache) {
+            selector = cache[2];
+            if (cache[1] != '%!') {
+                var r = getResultCache(contexts, selector);
+                if (r || cache[1] == '%?') return r || [];
+            }
+        }
         
         var parsed = parseSelector(selector);
         var results;
@@ -1484,7 +1532,7 @@ so it will not check the location in the DOM!
         for (var x = 0; x < pl; x++) {
             
             // can be a single node, but also an array of nodes
-            var currentContexts = context.length ? [].concat(context) : [context];
+            var currentContexts = [].concat(contexts);
             
             // get one parsed selector
             var psel = parsed[x];
@@ -1516,6 +1564,9 @@ so it will not check the location in the DOM!
             results = (x == 0) ? currentContexts : results.concat(currentContexts);
             results = filterUniqueNodes(results);
         };
+        
+        // add to cache
+        if (cache) addResultCache(contexts, selector, results);
         
         if (resultArr) {
             results = filterUniqueNodes(results.concat(resultArr));

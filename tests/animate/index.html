@@ -3,10 +3,11 @@
     <head>
         <script src="../../dist/im.js"></script>
         <script src="../../src/im.css.js"></script>
+        <script src="../../src/im.selector.js"></script>
         <script>
             im(function(){
                 im('body').bind('click', function(){
-                    im('.foo').animate({width : '300px'});                    
+                    im('% .foo').animate({width : '300px'});
                 });
             });
         </script>
