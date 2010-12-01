@@ -29,6 +29,7 @@ so it will not check the location in the DOM!
     var resultCache = {};
 
     /* ---------------------------------------------------------------------------
+    parseSelector - parse selector by splitting it up by ',' and whitespace.
     --------------------------------------------------------------------------- */
     var parseSelector = function(selector) {
         var joins = selector.split(',');
@@ -42,9 +43,10 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    hasClasses - has classes check based on regex array.
     --------------------------------------------------------------------------- */
-    var hasClasses = function(className, classes, regex) {
-        var l = classes.length;
+    var hasClasses = function(className, regex) {
+        var l = regex.length;
         while (l--) {
             if (!regex[l].test(className)) return false;
         }
@@ -52,6 +54,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    makeHasClassesRegexes - creates regular expressions for classes in array.
     --------------------------------------------------------------------------- */
     var makeHasClassesRegexes = function(classes) {
         var r = [];
@@ -63,6 +66,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    parseSelectionBit - parses selection bit, such as 'div.class1.class2'
     --------------------------------------------------------------------------- */
     var parseSelectionBit = function(bit) {
         var parts = bit.split('.');
@@ -77,6 +81,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    getContexts - returns new set of contexts based on an axis and selection rules.
     --------------------------------------------------------------------------- */
     var getContexts = function(currentContexts, axis, selection) {
         var result = [];
@@ -96,7 +101,7 @@ so it will not check the location in the DOM!
                         if (classNames) {
                             var c = n.className;
                             if (!c) continue;
-                            if (_hasClasses(c, classNames, regex)) result.push(n);
+                            if (_hasClasses(c, regex)) result.push(n);
                         } else {
                             result.push(n);
                         }
@@ -112,7 +117,7 @@ so it will not check the location in the DOM!
                     if (classNames) {
                         var n = nodes[y], c = n.className;
                         if (!c) continue;
-                        if (_hasClasses(c, classNames, regex)) result.push(n);
+                        if (_hasClasses(c, regex)) result.push(n);
                     } else {
                         result.push(nodes[y]);
                     }
@@ -123,6 +128,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    filterUniqueNodes - filters unique nodes in array.
     --------------------------------------------------------------------------- */
     var filterUniqueNodes = function(nodes) {
         var duplicate = false;
@@ -160,6 +166,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    getCacheResultKey - generates result cache key based on context UUID and selector.
     --------------------------------------------------------------------------- */
     var getCacheResultKey = function(context, selector) {
         var k = '', l = context.length;
@@ -168,6 +175,7 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    getResultCache - returns cached result based on context UUID and selector.
     --------------------------------------------------------------------------- */
     var getResultCache = function(context, selector) {
         var key = getCacheResultKey(context, selector);
@@ -175,10 +183,18 @@ so it will not check the location in the DOM!
     };
     
     /* ---------------------------------------------------------------------------
+    addResultCache - adds cached result based on context UUID and selector.
     --------------------------------------------------------------------------- */
     var addResultCache = function(context, selector, result) {
         var key = getCacheResultKey(context, selector);
         resultCache[key] = result;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    cleanSelector - fixes whitespace in CSS selector string
+    --------------------------------------------------------------------------- */
+    var cleanSelector = function(selector) {
+        return im.trim(selector.replace(/>/g, ' > ').replace(/\s+/g, ' '));
     };
     
     /* ---------------------------------------------------------------------------
@@ -198,7 +214,7 @@ so it will not check the location in the DOM!
         '%! .class' - set mode
         Create/overwrite new cached result, and return the new result.
         '%? .class' - get mode
-        Return cached result, also when undefined.
+        Return cached result, returns empty array when not found.
         
     --------------------------------------------------------------------------- */
     im.selectNodes = function(selector, context, resultArr) {
@@ -206,14 +222,12 @@ so it will not check the location in the DOM!
         // get contexts and make sure it is an array
         var contexts = context ? (context.length ? context : [context]) : [document];
         
-        // check if we need to utilize cache        
+        // handle caching and clean selector string
         var cache = selector.match(/^(%[\?\!]?)(.*)/);
-        if (cache) {
-            selector = cache[2];
-            if (cache[1] != '%!') {
-                var r = getResultCache(contexts, selector);
-                if (r || cache[1] == '%?') return r || [];
-            }
+        selector = cleanSelector(cache ? cache[2] : selector);
+        if (cache && cache[1] != '%!') {
+            var r = getResultCache(contexts, selector);
+            if (r || cache[1] == '%?') return r || [];
         }
         
         var parsed = parseSelector(selector);

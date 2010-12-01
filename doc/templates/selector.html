@@ -2,6 +2,8 @@
     im.selector features a very small (~ 200 lines of actual code) CSS selector engine that can do most common CSS selection tasks; a very small subset of what full blown CSS selector engines support. For comfort: the performance of the IM selector engine is up to par with jQuery's Sizzle library (one of the fastest on the market).
 </p>
 
+<h2>CSS selector support</h2>
+
 <p>
     im.selector supports the following type of selectors, and any combination of them:
 </p>
@@ -19,3 +21,30 @@
 var buttons = im('a.button'); // all anchors with class button
 var widgets = im('p > .widget-a, p > .widget-b'); // widget-a and widget-b inside paragraphs
 var widgetSpansAndStrongs = widgets.find('span, strong'); // spans and strongs inside the widgets</xmp>
+
+<h2>Caching</h2>
+
+<p>im.selectNodes supports a CSS selector caching mechanism. The caching using two keys: the concatenated UUID of all context
+elements, and the selector. Caching can be controlled by adding a prefix to your
+css selectors:</p>
+
+<ul>
+    <li>
+        <strong>'% .class' - auto mode</strong>
+        <div>Return cached result, or create new cached result and return that.</div>
+    </li>
+    <li>
+        <strong>'%! .class' - set mode</strong>
+        <div>Create/overwrite new cached result, and return the new result.</div>
+    </li>
+    <li>
+        <strong>'%? .class' - get mode</strong>
+        <div>Return cached result, returns empty array when not found.</div>
+    </li>
+</ul>
+
+<xmp class="code auto">
+    im('% div.tooltip').each(function(){}); // will walk the dom to find
+    im('% div.tooltip').each(function(){}); // will use cached result
+    im('%! div.tooltip').each(function(){}); // will walk the dom and update the cache
+</xmp>
