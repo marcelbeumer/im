@@ -1,5 +1,5 @@
 <p>
-    im.selector features a very small (~ 200 lines of actual code) CSS selector engine that can do most common CSS selection tasks; a very small subset of what full blown CSS selector engines support. For comfort: the performance of the IM selector engine is up to par with jQuery's Sizzle library (one of the fastest on the market).
+    im.selector features a very small (~ 200 lines of actual code) CSS selector engine that can do most common CSS selection tasks; a very small subset of what full blown CSS selector engines support. It also supports a rather unique caching mechanism. For your comfort: the performance of the IM selector engine is up to par with jQuery's Sizzle library (one of the fastest on the market).
 </p>
 
 <h2>CSS selector support</h2>
@@ -24,7 +24,7 @@ var widgetSpansAndStrongs = widgets.find('span, strong'); // spans and strongs i
 
 <h2>Caching</h2>
 
-<p>im.selectNodes supports a CSS selector caching mechanism. The caching using two keys: the concatenated UUID of all context
+<p>im.selectNodes supports a CSS selector caching mechanism that will remember result sets (even when the DOM changes later). The caching is using two keys to store a unique result set: the concatenated UUID of all context
 elements, and the selector. Caching can be controlled by adding a prefix to your
 css selectors:</p>
 
@@ -47,4 +47,5 @@ css selectors:</p>
     im('% div.tooltip').each(function(){}); // will walk the dom to find
     im('% div.tooltip').each(function(){}); // will use cached result
     im('%! div.tooltip').each(function(){}); // will walk the dom and update the cache
+    im('div.tooltip').each(function(){}); // will never use cache
 </xmp>

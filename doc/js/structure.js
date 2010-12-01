@@ -44,6 +44,7 @@
                                 array : {source : tpl.source('im/im.core.js', 'chains.array -')},
                                 item : {source : tpl.source('im/im.core.js', 'chains.item -')},
                                 el : {source : tpl.source('im/im.core.js', 'chains.el -')},
+                                exec : {source : tpl.source('im/im.core.js', 'chains.exec -')},
                                 each : {source : tpl.source('im/im.core.js', 'chains.each -')}
                             }
                         }
