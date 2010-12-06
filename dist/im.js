@@ -776,11 +776,13 @@ im.events.js
         window.attachEvent('onunload', function(){
             var data = im.data();
             for (var x = 0; x < data.length; x++) {
-                var elem = im.getElementByUUID(x);
-                if (!data[x] || !elem || !data[x].eventHandlers) continue;
-                for (var name in data[x].eventHandlers) {
-                    try {im.unbind(elem, name);} catch(e) {}
-                }
+                try {
+                    var elem = im.getElementByUUID(x);
+                    if (!data[x] || !elem || !data[x].eventHandlers) continue;
+                    for (var name in data[x].eventHandlers) {
+                        try {im.unbind(elem, name);} catch(e) {}
+                    }
+                } catch(e) {}
             }
         });
     }
