@@ -1,0 +1,23 @@
+<!DOCTYPE "html">
+<html>
+    <head>
+        <script src="../../dist/im.js"></script>
+        <script src="../../src/im.dom.js"></script>
+        <script>
+            im(function(){
+                im('.foo').attr('style', 'background-color:blue;').find('a').
+                    item(0).
+                        attr('href', 'google.com').
+                        attr('style', 'font-size:18px;color:#fff').end().
+                    item(1).
+                        removeAttr('style');
+            });
+        </script>
+    </head>
+    <body>
+        <div class="foo" style="width:500px;background-color:rgb(255,0,0)">
+            <a href="#">link</a>
+            <a href="#" style="font-size:40px">link</a>
+        </div>
+    </body>
+</html>

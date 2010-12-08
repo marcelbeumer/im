@@ -74,6 +74,13 @@ im.core.js
     };
 
     /* ---------------------------------------------------------------------------
+    im.isObject - safe isObject
+    --------------------------------------------------------------------------- */
+    im.isObject = function(obj) {
+        return Object.prototype.toString.call(obj) === "[object Object]";
+    };
+
+    /* ---------------------------------------------------------------------------
     im.merge - merges two arrays. 
     Does not care if the passed object are real arrays or not.
         param first: first array, this array will be modified.
@@ -644,6 +651,48 @@ im.dom.js
         return div.firstChild;
     };
     
+    /* ---------------------------------------------------------------------------
+    im.attr - sets or gets an attribute. 
+    Returns undefined when getting unset attribute.
+        param el: element
+        param name: name of attribute.
+        (optional) param value: value
+        
+    Example:
+        im.attr(el, 'src', 'foo.png'); // set
+        im.attr(el, 'src') // get
+    --------------------------------------------------------------------------- */
+    im.attr = function(el, name, value) {
+        if (value) el.setAttribute(name, value); else return el.getAttribute(name);
+    };
+    
+    /* ---------------------------------------------------------------------------
+    im.chains.attr - wraps im.attr.
+    For set mode, it sets attributes on all items in chain.
+    For get mode, it gets from first item in the chain.
+    --------------------------------------------------------------------------- */
+    im.chains.attr = function(name, value) {
+        if (value) {
+            for (var x = 0; x < this.length; x++) im.attr(this[x], name, value);
+            return this;
+        } else {
+            if (this.length > 0) return im.attr(this[0], name);
+        }
+    };
+    
+    /* ---------------------------------------------------------------------------
+    im.removeAttr - removes attribute
+    --------------------------------------------------------------------------- */
+    im.removeAttr = function(el, name) {el.removeAttribute(name);};
+
+    /* ---------------------------------------------------------------------------
+    im.chains.removeAttr - wraps im.removeAttr.
+    --------------------------------------------------------------------------- */
+    im.chains.removeAttr = function(name) {
+        for (var x = 0; x < this.length; x++) im.removeAttr(this[x], name);
+        return this;
+    };
+    
 })(window.im || window);
 /* -------------------------------------------------------
 //////////////////////////////////////////////////////////
@@ -732,7 +781,7 @@ im.events.js
         im.data(element, 'eventHandlers', ed);
         
         if (window.addEventListener) {
-            element.addEventListener(eventName, h, true);
+            element.addEventListener(eventName, h, false);
         } else {
             element.attachEvent('on' + eventName, h);
         }

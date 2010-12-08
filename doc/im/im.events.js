@@ -85,7 +85,7 @@ im.events.js
         im.data(element, 'eventHandlers', ed);
         
         if (window.addEventListener) {
-            element.addEventListener(eventName, h, true);
+            element.addEventListener(eventName, h, false);
         } else {
             element.attachEvent('on' + eventName, h);
         }

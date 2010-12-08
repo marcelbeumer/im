@@ -74,6 +74,13 @@ im.core.js
     };
 
     /* ---------------------------------------------------------------------------
+    im.isObject - safe isObject
+    --------------------------------------------------------------------------- */
+    im.isObject = function(obj) {
+        return Object.prototype.toString.call(obj) === "[object Object]";
+    };
+
+    /* ---------------------------------------------------------------------------
     im.merge - merges two arrays. 
     Does not care if the passed object are real arrays or not.
         param first: first array, this array will be modified.
