@@ -8,7 +8,7 @@ im.events.js
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    var storeBind = function(element, bucket, obj) {
+    var store = function(element, bucket, obj) {
         // get data storage
         var d = im.data(element, bucket) || [];
         
@@ -28,8 +28,7 @@ im.events.js
         var l = d.length;
         while (l--) {
             var i = d[l];
-            if (i && i.unbind) {
-                
+            if (i && i.unbind) {               
                 var matches = true;
                 for (var name in options) {
                     if (options[name] && (options[name] != i[name])) {
@@ -37,7 +36,6 @@ im.events.js
                         break;
                     }
                 }
-                
                 if (matches) {
                     i.unbind();
                     d.splice(l,1);
@@ -69,11 +67,9 @@ im.events.js
         var types = im.bind.types;
         var impl = (types[name] || types['default'])();
         
-        // bind
+        // bind and store
         var unbind = impl.bind(element, name, handler);
-        
-        // store
-        storeBind(element, 'binds', {name : name, fn : handler, unbind : unbind});
+        store(element, '__binds__', {name : name, fn : handler, unbind : unbind});
     };
     
     /* ---------------------------------------------------------------------------
@@ -89,7 +85,7 @@ im.events.js
     removes all event handlers of that event name.
     --------------------------------------------------------------------------- */
     im.unbind = function(element, name, handler) {
-        unbind(element, 'binds', {name : name, fn : handler});
+        unbind(element, '__binds__', {name : name, fn : handler});
     };
 
     /* ---------------------------------------------------------------------------
@@ -123,11 +119,9 @@ im.events.js
         var impl = (types[name] || types['default'])();
         if (!im.isFunction(impl.live)) return;
         
-        // attach event
+        // bind and store
         var unbind = impl.live(element, selector, name, handler);
-        
-        // store
-        storeBind(element, 'lives', {
+        store(element, '__lives__', {
             selector : selector, name : name, fn : handler, unbind : unbind
         });
     };
@@ -141,10 +135,14 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.die - unbinds event live handler.
+        param element: element
+        param selector (optional): css selector
+        param name (optional): event name
+        param handler (optional): evnet handler
     --------------------------------------------------------------------------- */
     im.die = function(element, selector, name, handler) {
-        unbind(element, 'lives', {
+        unbind(element, '__lives__', {
             selector : selector, name : name, fn : handler 
         });
     };
@@ -177,6 +175,7 @@ im.events.js
             if (!e.target) e.target = e.srcElement || document;
             if (e.target.nodeType === 3) event.target = event.target.parentNode;
             if (!e.preventDefault) e.preventDefault = function(){e.returnValue = false;};
+            if (!e.stopPropagation) e.stopPropagation = function(){e.cancelBubble = true;};
             return e;
         };
         
@@ -262,11 +261,11 @@ im.events.js
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    // TODO: make one base class, and have two subclasses inherit with event name option
-    // TODO: make live work
-    var mouseEnterLeave = function() {
+    var mouseEnterLeave = function(name) {
         var self = im.bind.types['default']();
         
+        var realName = name == 'mouseenter' ? 'mouseover' : 'mouseout';
+                
         var validate = function(element, name, e) {
             var related = e.relatedTarget ? e.relatedTarget : (name == "mouseleave" ? e.toElement : e.fromElement);
             if (related && (related == element || im.isAncestorOf(element, related))) return false;
@@ -275,15 +274,18 @@ im.events.js
         
         var __super__bind = self.bind;
         self.bind = function(element, name, handler) {
-            var that = self;
-            
-            var realName = name == 'mouseenter' ? 'mouseover' : 'mouseout';
-            var r = __super__bind(element, realName, function(e){
+            return __super__bind(element, realName, function(e){
                 if (!validate(element, name, e)) return;
                 return handler.apply(element, [e]);
             });
-            
-            return r;
+        };
+        
+        self.live = function(element, selector, name, handler) {
+            var ews = self.elementWithinSelector;
+            return __super__bind(element, realName, function(e){
+                var el = ews(e.target, selector);
+                if (el && validate(el, name, e)) return handler.apply(el, [e]);
+            });
         };
         
         return self;
@@ -292,12 +294,16 @@ im.events.js
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    im.bind.types.mouseenter = mouseEnterLeave;
+    im.bind.types.mouseenter = function() {
+        return mouseEnterLeave('mouseenter');
+    };
     
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    im.bind.types.mouseleave = mouseEnterLeave;
+    im.bind.types.mouseleave = function() {
+        return mouseEnterLeave('mouseleave');
+    };
         
 })(window.im || window);
 

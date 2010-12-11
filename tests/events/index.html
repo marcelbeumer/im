@@ -3,6 +3,7 @@
     <head>
         <script src="../../dist/im.js"></script>
         <script src="../../src/im.events.js"></script>
+        <script src="../../plugins/im.console.js"></script>
         <script>
             im(function(){
                 im('p').bind('mouseenter', function(){
@@ -15,8 +16,12 @@
                     return false;
                 });
                 
-                im('body').live('p', 'mouseenter', function(){
-                    console.info('p enter');
+                im('body').live('strong', 'mouseenter', function(){
+                    console.info('strong enter');
+                    
+                }).live('strong', 'mouseleave', function(){
+                    console.info('strong leave');
+                    
                 });
                 
                 im('form').live('strong', 'click', function(){
@@ -27,6 +32,8 @@
                 im('body').bind('click', function(){
                     console.info('bindclick');
                     im('p').unbind('mouseleave').unbind('mouseenter').css({backgroundColor : 'red'});
+                    //im('body').die('strong', 'mouseleave');
+                    im('body').die('strong'); 
                 });
             });
         </script>
