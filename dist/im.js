@@ -702,89 +702,70 @@ im.events.js
 (function(im){
     
     /* ---------------------------------------------------------------------------
+    
     --------------------------------------------------------------------------- */
-    var checkPreventDefault = function(e, returnValue) {
-        if (returnValue !== false) return;
-        if (e && e.preventDefault) {
-            e.preventDefault();
-        } else {
-            if (window.event) window.event.returnValue = false;
-        }
-        return false;
+    var store = function(element, bucket, obj) {
+        // get data storage
+        var d = im.data(element, bucket) || [];
+        
+        // store result
+        d.push(obj);  
+        im.data(element, bucket, d);
     };
     
     /* ---------------------------------------------------------------------------
-    --------------------------------------------------------------------------- */
-    var fixEventObject = function(e) {
-        if (!e.target) e.target = e.srcElement || document;
-        if (e.target.nodeType === 3) event.target = event.target.parentNode;
-    };
     
-    /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
-    var validateMouseEnterLeave = function(element, e, eventName) {
-        var related = e.relatedTarget ? e.relatedTarget : (eventName == "mouseleave" ? e.toElement : e.fromElement);
-        if (related && (related == element || im.isAncestorOf(element, related))) return false;
-        return true;
-    };
-    
-    /* ---------------------------------------------------------------------------
-    --------------------------------------------------------------------------- */
-    var getBindHandler = function(element, eventName, handler) {
-        if (eventName == "mouseenter" || eventName == "mouseleave") {
-            return function(e) {
-                fixEventObject(e);
-                if (validateMouseEnterLeave(this === window ? e.target : this, e, eventName)) {
-                    return checkPreventDefault(e, handler.apply(element, [e]));
+    var unbind = function(element, bucket, options) {
+        // get data
+        var d = im.data(element, bucket) || [];
+        
+        // unbind
+        var l = d.length;
+        while (l--) {
+            var i = d[l];
+            if (i && i.unbind) {               
+                var matches = true;
+                for (var name in options) {
+                    if (options[name] && (options[name] != i[name])) {
+                        matches = false;
+                        break;
+                    }
                 }
-            };
-        } else {
-            return function(e) {
-                fixEventObject(e);
-                return checkPreventDefault(e, handler.apply(element, [e]));
-            };
+                if (matches) {
+                    i.unbind();
+                    d.splice(l,1);
+                }
+            }
         }
+        
+        // store data
+        im.data(element, bucket, d);
     };
-    
-    /* ---------------------------------------------------------------------------
-    --------------------------------------------------------------------------- */
-    var translateEventName = function(eventName) {
-        if (eventName == "mouseleave") {
-            eventName = "mouseout";
-        } else if (eventName =="mouseenter") {
-            eventName = "mouseover";
-        }
-        return eventName;
-    };
-    
+        
     /* ---------------------------------------------------------------------------
     im.bind - binds event handler to element.
     Also implements mouseenter and mouseleave events.
         param element: element
-        param eventName: event name without 'on' (ex: 'click', 'mouseover')
+        param name: event name without 'on' (ex: 'click', 'mouseover')
         param handler: function 
                        ('this' will be element, first argument will be event obj)
-        return false will preventDefault the event
+        return false will preventDefault and stopPropagation the event
     Example:
         im.bind(node, 'click', function(e){
             alert(e.target);
-            return false; // prevent default
+            return false; // prevent default and bubble
         });
     --------------------------------------------------------------------------- */
-    im.bind = function(element, eventName, handler) {
-        var h = getBindHandler(element, eventName, handler);
-        eventName = translateEventName(eventName);
+    im.bind = function(element, name, handler) {
         
-        var ed = im.data(element, 'eventHandlers') || {};
-        ed[eventName] = ed[eventName] || [];
-        ed[eventName].push({h : h, o : handler}); // store both new and original
-        im.data(element, 'eventHandlers', ed);
+        // get event implementation
+        var types = im.bind.types;
+        var impl = (types[name] || types['default'])();
         
-        if (window.addEventListener) {
-            element.addEventListener(eventName, h, false);
-        } else {
-            element.attachEvent('on' + eventName, h);
-        }
+        // bind and store
+        var unbind = impl.bind(element, name, handler);
+        store(element, '__binds__', {name : name, fn : handler, unbind : unbind});
     };
     
     /* ---------------------------------------------------------------------------
@@ -794,48 +775,15 @@ im.events.js
         for (var x = 0; x < this.length; x++) im.bind(this[x], eventName, handler);
         return this;
     };
-    
+
     /* ---------------------------------------------------------------------------
     im.unbind - unbinds event handler to element. If no handler is provided, it
     removes all event handlers of that event name.
     --------------------------------------------------------------------------- */
-    im.unbind = function(element, eventName, handler) {
-        eventName = translateEventName(eventName);
-        var ed = im.data(element, 'eventHandlers') || {};
-        var ea = ed[eventName] || [];
-        
-        for (var x = 0; x < ea.length; x++) {
-            var e = ea[x];
-            if (e && e.h && (!handler || e.o === handler)) {
-                if (window.removeEventListener) {
-                    element.removeEventListener(eventName, e.h, true);
-                } else {
-                    element.detachEvent('on' + eventName, e.h);
-                }
-            }
-            ea[x] = e.o = e.h = null;
-        }
-        im.data(element, 'eventHandlers', ed);
+    im.unbind = function(element, name, handler) {
+        unbind(element, '__binds__', {name : name, fn : handler});
     };
-    
-    /* ---------------------------------------------------------------------------
-    prevent memory leaks in IE
-    --------------------------------------------------------------------------- */
-    if (im.browser.msie) {
-        window.attachEvent('onunload', function(){
-            var data = im.data();
-            for (var x = 0; x < data.length; x++) {
-                try {
-                    var elem = im.getElementByUUID(x);
-                    if (!data[x] || !elem || !data[x].eventHandlers) continue;
-                    for (var name in data[x].eventHandlers) {
-                        try {im.unbind(elem, name);} catch(e) {}
-                    }
-                } catch(e) {}
-            }
-        });
-    }
-    
+
     /* ---------------------------------------------------------------------------
     chains.unbind - wraps im.unbind
     --------------------------------------------------------------------------- */
@@ -850,7 +798,7 @@ im.events.js
     Therefore, events that don't bubble up, will not be caught.
         param element: element
         param selector: CSS selector (uses CSS selector engine to validate)
-        param eventName: eventName (like with im.bind)
+        param name: event name (like with im.bind)
         param handler: function 
                        ('this' will be descendant element, 
                        first argument will be event obj)
@@ -860,28 +808,18 @@ im.events.js
             alert('i am a button with this innerHTML: ' + this.innerHTML);
         });
     --------------------------------------------------------------------------- */
-    im.live = function(element, selector, eventName, handler) {
+    im.live = function(element, selector, name, handler) {
         
-        im.bind(element, translateEventName(eventName), function(e){
-            var el;
-            
-            var t = im(e.target);
-            if (t.filter(selector).length > 0) {
-                el = e.target;
-            } else {
-                var inv = t.parents(selector);
-                if (inv.length > 0) el = inv[0];
-            }
-            
-            if (el && handler) {
-                if (eventName == "mouseenter" || eventName == "mouseleave") {
-                    if (validateMouseEnterLeave(el, e, eventName) === true) return handler.apply(el, [e]);
-                } else {
-                    return handler.apply(el, [e]);
-                }
-            }
+        // get event implementationv
+        var types = im.bind.types;
+        var impl = (types[name] || types['default'])();
+        if (!im.isFunction(impl.live)) return;
+        
+        // bind and store
+        var unbind = impl.live(element, selector, name, handler);
+        store(element, '__lives__', {
+            selector : selector, name : name, fn : handler, unbind : unbind
         });
-        
     };
     
     /* ---------------------------------------------------------------------------
@@ -892,6 +830,177 @@ im.events.js
         return this;
     };
     
+    /* ---------------------------------------------------------------------------
+    im.die - unbinds event live handler.
+        param element: element
+        param selector (optional): css selector
+        param name (optional): event name
+        param handler (optional): event handler
+    --------------------------------------------------------------------------- */
+    im.die = function(element, selector, name, handler) {
+        unbind(element, '__lives__', {
+            selector : selector, name : name, fn : handler 
+        });
+    };
+
+    /* ---------------------------------------------------------------------------
+    chains.die - wraps im.die
+    --------------------------------------------------------------------------- */
+    im.chains.die = function(selector, eventName, handler) {
+        for (var x = 0; x < this.length; x++) im.die(this[x], selector, eventName, handler);
+        return this;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types = {};
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types['default'] = function() {
+        
+        var self = {};
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.getEventObject = function(e) {
+            e = e || window.event;
+            if (!e.target) e.target = e.srcElement || document;
+            if (e.target.nodeType === 3) event.target = event.target.parentNode;
+            if (!e.preventDefault) e.preventDefault = function(){e.returnValue = false;};
+            if (!e.stopPropagation) e.stopPropagation = function(){e.cancelBubble = true;};
+            return e;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.addEventListener = function(element, name, handler) {
+            if (window.addEventListener) {
+                element.addEventListener(name, handler, false);
+            } else {
+                element.attachEvent('on' + name, handler);
+            }
+        };
+
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.removeEventListener = function(element, name, handler) {
+            if (window.removeEventListener) {
+                element.removeEventListener(name, handler, false);
+            } else {
+                element.detachEvent('on' + name, handler);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.returnValue = function(e, returnValue) {
+            if (returnValue !== false) return;
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.elementWithinSelector = function(element, selector) {
+            var el, t = im(element);
+            if (t.filter(selector).length > 0) {
+                el = element;
+            } else {
+                var inv = t.parents(selector);
+                if (inv.length > 0) el = inv[0];
+            }
+            return el;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.bind = function(element, name, handler) {
+            var that = self;
+            
+            var h = function(e) {
+                e = that.getEventObject(e);
+                var r = handler.apply(element, [e]);
+                return that.returnValue(e, r);
+            };
+            
+            self.addEventListener(element, name, h);
+            
+            return function(){
+                that.removeEventListener(element, name, h);
+            };
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.live = function(element, selector, name, handler) {
+            var that = self;
+            return self.bind(element, name, function(e){
+                var el = that.elementWithinSelector(e.target, selector);
+                if (el) return handler.apply(el, [e]);
+            });
+        };
+        
+        return self;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    var mouseEnterLeave = function(name) {
+        var self = im.bind.types['default']();
+        
+        var realName = name == 'mouseenter' ? 'mouseover' : 'mouseout';
+                
+        var validate = function(element, name, e) {
+            var related = e.relatedTarget ? e.relatedTarget : (name == "mouseleave" ? e.toElement : e.fromElement);
+            if (related && (related == element || im.isAncestorOf(element, related))) return false;
+            return true;
+        };
+        
+        var __super__bind = self.bind;
+        self.bind = function(element, name, handler) {
+            return __super__bind(element, realName, function(e){
+                if (!validate(element, name, e)) return;
+                return handler.apply(element, [e]);
+            });
+        };
+        
+        self.live = function(element, selector, name, handler) {
+            var ews = self.elementWithinSelector;
+            return __super__bind(element, realName, function(e){
+                var el = ews(e.target, selector);
+                if (el && validate(el, name, e)) return handler.apply(el, [e]);
+            });
+        };
+        
+        return self;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types.mouseenter = function() {
+        return mouseEnterLeave('mouseenter');
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types.mouseleave = function() {
+        return mouseEnterLeave('mouseleave');
+    };
+        
 })(window.im || window);
 
 /* ---------------------------------------------------------------------------

@@ -105,6 +105,7 @@
                                 bind : {source : tpl.source('im/im.events.js', 'im.bind -')},
                                 unbind : {source : tpl.source('im/im.events.js', 'im.unbind -')},
                                 live : {source : tpl.source('im/im.events.js', 'im.live -')},
+                                die : {source : tpl.source('im/im.events.js', 'im.die -')},
                                 onready : {source : tpl.source('im/im.events.js', 'im.onready -')},
                                 onload : {source : tpl.source('im/im.events.js', 'im.onload -')}
                             }
@@ -114,7 +115,8 @@
                             _sub : {
                                 bind : {source : tpl.source('im/im.events.js', 'chains.bind -')},
                                 unbind : {source : tpl.source('im/im.events.js', 'chains.unbind -')},
-                                live : {source : tpl.source('im/im.events.js', 'chains.live -')}
+                                live : {source : tpl.source('im/im.events.js', 'chains.live -')},
+                                die : {source : tpl.source('im/im.events.js', 'chains.die -')}
                             }
                         }
                     }            

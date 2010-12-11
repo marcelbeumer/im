@@ -139,7 +139,7 @@ im.events.js
         param element: element
         param selector (optional): css selector
         param name (optional): event name
-        param handler (optional): evnet handler
+        param handler (optional): event handler
     --------------------------------------------------------------------------- */
     im.die = function(element, selector, name, handler) {
         unbind(element, '__lives__', {
