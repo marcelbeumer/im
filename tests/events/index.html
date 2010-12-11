@@ -5,10 +5,6 @@
         <script src="../../src/im.events.js"></script>
         <script>
             im(function(){
-                im('body').bind('click', function(){
-                    im('p').unbind('mouseleave').unbind('mouseenter').css({backgroundColor : 'red'});
-                }); 
-                
                 im('p').bind('mouseenter', function(){
                     im(this).css({backgroundColor : 'blue'});
                 }).bind('mouseleave', function(){
@@ -23,8 +19,14 @@
                     console.info('p enter');
                 });
                 
-                im('body').live('strong', 'click', function(){
+                im('form').live('strong', 'click', function(){
                     console.info('strong');
+                    return false;
+                });
+
+                im('body').bind('click', function(){
+                    console.info('bindclick');
+                    im('p').unbind('mouseleave').unbind('mouseenter').css({backgroundColor : 'red'});
                 });
             });
         </script>

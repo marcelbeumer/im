@@ -4,6 +4,50 @@ im.events.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
 (function(im){
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    var storeBind = function(element, bucket, obj) {
+        // get data storage
+        var d = im.data(element, bucket) || [];
+        
+        // store result
+        d.push(obj);  
+        im.data(element, bucket, d);
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    var unbind = function(element, bucket, options) {
+        // get data
+        var d = im.data(element, bucket) || [];
+        
+        // unbind
+        var l = d.length;
+        while (l--) {
+            var i = d[l];
+            if (i && i.unbind) {
+                
+                var matches = true;
+                for (var name in options) {
+                    if (options[name] && (options[name] != i[name])) {
+                        matches = false;
+                        break;
+                    }
+                }
+                
+                if (matches) {
+                    i.unbind();
+                    d.splice(l,1);
+                }
+            }
+        }
+        
+        // store data
+        im.data(element, bucket, d);
+    };
         
     /* ---------------------------------------------------------------------------
     im.bind - binds event handler to element.
@@ -21,20 +65,15 @@ im.events.js
     --------------------------------------------------------------------------- */
     im.bind = function(element, name, handler) {
         
-        // get event implementationv
+        // get event implementation
         var types = im.bind.types;
         var impl = (types[name] || types['default'])();
         
         // bind
         var unbind = impl.bind(element, name, handler);
         
-        // get data storage
-        var d = im.data(element, 'binds') || {};
-        d[name] = d[name] || [];
-        
-        // store result
-        d[name].push({fn : handler, unbind : unbind});        
-        im.data(element, 'binds', d);
+        // store
+        storeBind(element, 'binds', {name : name, fn : handler, unbind : unbind});
     };
     
     /* ---------------------------------------------------------------------------
@@ -50,23 +89,7 @@ im.events.js
     removes all event handlers of that event name.
     --------------------------------------------------------------------------- */
     im.unbind = function(element, name, handler) {
-        
-        // get data
-        var d = im.data(element, 'binds') || {};
-        var dd = d[name] || [];
-        
-        // unbind
-        var l = dd.length;
-        while (l--) {
-            var i = dd[l];
-            if (i && i.unbind && (!handler || handler === i.handler)) {
-                i.unbind();
-                dd.splice(l,1);
-            }
-        }
-        
-        // store data
-        im.data(element, 'binds', d);
+        unbind(element, 'binds', {name : name, fn : handler});
     };
 
     /* ---------------------------------------------------------------------------
@@ -77,12 +100,78 @@ im.events.js
         return this;
     };
     
+    /* ---------------------------------------------------------------------------
+    im.live - bind event listener for descendant selector. 
+    Does not bind on the actual descendant nodes itself, but relies on event bubbling.
+    Therefore, events that don't bubble up, will not be caught.
+        param element: element
+        param selector: CSS selector (uses CSS selector engine to validate)
+        param name: event name (like with im.bind)
+        param handler: function 
+                       ('this' will be descendant element, 
+                       first argument will be event obj)
+        
+    Example:
+        im.live(document.body, 'p .button', 'click', function(e){
+            alert('i am a button with this innerHTML: ' + this.innerHTML);
+        });
+    --------------------------------------------------------------------------- */
+    im.live = function(element, selector, name, handler) {
+        
+        // get event implementationv
+        var types = im.bind.types;
+        var impl = (types[name] || types['default'])();
+        if (!im.isFunction(impl.live)) return;
+        
+        // attach event
+        var unbind = impl.live(element, selector, name, handler);
+        
+        // store
+        storeBind(element, 'lives', {
+            selector : selector, name : name, fn : handler, unbind : unbind
+        });
+    };
+    
+    /* ---------------------------------------------------------------------------
+    chains.live - wraps im.live
+    --------------------------------------------------------------------------- */
+    im.chains.live = function(selector, eventName, handler) {
+        for (var x = 0; x < this.length; x++) im.live(this[x], selector, eventName, handler);
+        return this;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.die = function(element, selector, name, handler) {
+        unbind(element, 'lives', {
+            selector : selector, name : name, fn : handler 
+        });
+    };
+
+    /* ---------------------------------------------------------------------------
+    chains.die - wraps im.die
+    --------------------------------------------------------------------------- */
+    im.chains.die = function(selector, eventName, handler) {
+        for (var x = 0; x < this.length; x++) im.die(this[x], selector, eventName, handler);
+        return this;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
     im.bind.types = {};
     
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
     im.bind.types['default'] = function() {
         
         var self = {};
         
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.getEventObject = function(e) {
             e = e || window.event;
             if (!e.target) e.target = e.srcElement || document;
@@ -91,6 +180,9 @@ im.events.js
             return e;
         };
         
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.addEventListener = function(element, name, handler) {
             if (window.addEventListener) {
                 element.addEventListener(name, handler, false);
@@ -99,6 +191,9 @@ im.events.js
             }
         };
 
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.removeEventListener = function(element, name, handler) {
             if (window.removeEventListener) {
                 element.removeEventListener(name, handler, false);
@@ -107,6 +202,9 @@ im.events.js
             }
         };
         
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.returnValue = function(e, returnValue) {
             if (returnValue !== false) return;
             e.preventDefault();
@@ -114,6 +212,23 @@ im.events.js
             return false;
         };
         
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.elementWithinSelector = function(element, selector) {
+            var el, t = im(element);
+            if (t.filter(selector).length > 0) {
+                el = element;
+            } else {
+                var inv = t.parents(selector);
+                if (inv.length > 0) el = inv[0];
+            }
+            return el;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.bind = function(element, name, handler) {
             var that = self;
             
@@ -130,9 +245,25 @@ im.events.js
             };
         };
         
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.live = function(element, selector, name, handler) {
+            var that = self;
+            return self.bind(element, name, function(e){
+                var el = that.elementWithinSelector(e.target, selector);
+                if (el) return handler.apply(el, [e]);
+            });
+        };
+        
         return self;
     };
     
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    // TODO: make one base class, and have two subclasses inherit with event name option
+    // TODO: make live work
     var mouseEnterLeave = function() {
         var self = im.bind.types['default']();
         
@@ -155,98 +286,19 @@ im.events.js
             return r;
         };
         
-        self.live = function(name, handler) {
-            var realName = name == 'mouseenter' ? 'mouseover' : 'mouseout';
-            var r = {};
-            r[realName] = function(e) {
-                if (!validate(this, name, e)) return;
-                return handler.apply(this, [e]);
-            };
-            return r;
-        };
-        
         return self;
     };
     
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
     im.bind.types.mouseenter = mouseEnterLeave;
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
     im.bind.types.mouseleave = mouseEnterLeave;
-    
-    
-    /* ---------------------------------------------------------------------------
-    im.live - bind event listener for descendant selector. 
-    Does not bind on the actual descendant nodes itself, but relies on event bubbling.
-    Therefore, events that don't bubble up, will not be caught.
-        param element: element
-        param selector: CSS selector (uses CSS selector engine to validate)
-        param name: event name (like with im.bind)
-        param handler: function 
-                       ('this' will be descendant element, 
-                       first argument will be event obj)
         
-    Example:
-        im.live(document.body, 'p .button', 'click', function(e){
-            alert('i am a button with this innerHTML: ' + this.innerHTML);
-        });
-    --------------------------------------------------------------------------- */
-    im.live = function(element, selector, name, handler) {
-        
-        var impls, types = im.bind.types;
-        if (types[name]) {
-            if (!im.isFunction(types[name].live)) return;
-            impls = types[name].live();
-        } else {
-            impls = {};
-            impls[name] = handler;
-        }
-        
-        for (var name in impls) {
-            (function(name, handler){
-                im.bind(element, name, function(e){
-
-                    var el, t = im(e.target);
-                    if (t.filter(selector).length > 0) {
-                        el = e.target;
-                    } else {
-                        var inv = t.parents(selector);
-                        if (inv.length > 0) el = inv[0];
-                    }
-                    
-                    if (el) return handler.apply(el, [e]);
-                    
-                });                
-            })(name, impls[name]);
-        }
-        /*
-        im.bind(element, translateEventName(eventName), function(e){
-            var el;
-            
-            var t = im(e.target);
-            if (t.filter(selector).length > 0) {
-                el = e.target;
-            } else {
-                var inv = t.parents(selector);
-                if (inv.length > 0) el = inv[0];
-            }
-            
-            if (el && handler) {
-                if (eventName == "mouseenter" || eventName == "mouseleave") {
-                    if (validateMouseEnterLeave(el, e, eventName) === true) return handler.apply(el, [e]);
-                } else {
-                    return handler.apply(el, [e]);
-                }
-            }
-        });*/
-        
-    };
-    
-    /* ---------------------------------------------------------------------------
-    chains.live - wraps im.live
-    --------------------------------------------------------------------------- */
-    im.chains.live = function(selector, eventName, handler) {
-        for (var x = 0; x < this.length; x++) im.live(this[x], selector, eventName, handler);
-        return this;
-    };
-    
 })(window.im || window);
 
 /* ---------------------------------------------------------------------------
