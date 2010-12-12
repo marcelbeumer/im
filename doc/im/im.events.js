@@ -265,7 +265,7 @@ im.events.js
         var self = im.bind.types['default']();
         
         var realName = name == 'mouseenter' ? 'mouseover' : 'mouseout';
-                
+        
         var validate = function(element, name, e) {
             var related = e.relatedTarget ? e.relatedTarget : (name == "mouseleave" ? e.toElement : e.fromElement);
             if (related && (related == element || im.isAncestorOf(element, related))) return false;
