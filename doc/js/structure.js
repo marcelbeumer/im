@@ -14,7 +14,7 @@
         designPageLoad : {title : "Designing the page load", content : tpl.template('designPageLoad.html')},
         performance : {title : "Performance", content : tpl.template('performance.html')},
         creatingPlugins : {title : "Creating plugins for IM", content : tpl.template('creatingPlugins.html')},
-        internals : {title : "Internal workings", content : tpl.template('internals.html')},
+        //internals : {title : "Internal workings", content : tpl.template('internals.html')},
         api : {
             title : 'API reference',
             _sub : {
@@ -74,7 +74,9 @@
                                 append : {source : tpl.source('im/im.dom.js', 'im.append -')},
                                 appendTo : {source : tpl.source('im/im.dom.js', 'im.appendTo -')},
                                 html : {source : tpl.source('im/im.dom.js', 'im.html -')},
-                                create : {source : tpl.source('im/im.dom.js', 'im.create -')}
+                                create : {source : tpl.source('im/im.dom.js', 'im.create -')},
+                                attr : {source : tpl.source('im/im.dom.js', 'im.attr -')},
+                                removeAttr : {source : tpl.source('im/im.dom.js', 'im.removeAttr -')}
                             }
                         },
                         chains : {
@@ -91,7 +93,9 @@
                                 append : {source : tpl.source('im/im.dom.js', 'chains.append -')},
                                 appendTo : {source : tpl.source('im/im.dom.js', 'chains.appendTo -')},
                                 html : {source : tpl.source('im/im.dom.js', 'chains.html -')},
-                                create : {source : tpl.source('im/im.dom.js', 'chains.create -')}
+                                create : {source : tpl.source('im/im.dom.js', 'chains.create -')},
+                                attr : {source : tpl.source('im/im.dom.js', 'chains.attr -')},
+                                removeAttr : {source : tpl.source('im/im.dom.js', 'chains.removeAttr -')}
                             }
                         }
                     }

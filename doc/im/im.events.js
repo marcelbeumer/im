@@ -143,10 +143,10 @@ im.events.js
     --------------------------------------------------------------------------- */
     im.die = function(element, selector, name, handler) {
         unbind(element, '__lives__', {
-            selector : selector, name : name, fn : handler 
+            selector : selector, name : name, fn : handler
         });
     };
-
+    
     /* ---------------------------------------------------------------------------
     chains.die - wraps im.die
     --------------------------------------------------------------------------- */

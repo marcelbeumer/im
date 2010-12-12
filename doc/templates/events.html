@@ -1,3 +1,10 @@
 <p>
     In im.events you will find event handling functions and chains. Besides providing a cross browser wrapping API for standard events, IM also implements 'mouseenter', 'mouseleave' and <a href="#" class="doc-link" doc-path="api.events.functions.live">im.live</a> which can capture (bubbling) events without needing to attach event handlers to the elements itself.
 </p>
+
+<h2>Custom event implementations</h2>
+
+<p>
+    IM allows writing custom event implementations, as well as overriding standard browser events such as 'click' or 'mouseout', by adding new properties to im.bind.types. Please see how how mouseenter and mouseleave are implemented in im.events.js. Together with reading through the source of im.bind.types['default'] it should get you up to speed for doing your own event implemetation.
+</p>
+

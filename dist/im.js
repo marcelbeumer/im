@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "post-1.1.2-dev";
+    var VERSION = "1.2RC1";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -839,10 +839,10 @@ im.events.js
     --------------------------------------------------------------------------- */
     im.die = function(element, selector, name, handler) {
         unbind(element, '__lives__', {
-            selector : selector, name : name, fn : handler 
+            selector : selector, name : name, fn : handler
         });
     };
-
+    
     /* ---------------------------------------------------------------------------
     chains.die - wraps im.die
     --------------------------------------------------------------------------- */
