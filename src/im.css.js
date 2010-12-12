@@ -110,62 +110,6 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
-    
-    --------------------------------------------------------------------------- */
-    var clock = function() {
-        var self = {};
-        
-        var interval;
-        self.jobs = [];
-        
-        self.render = function(){
-            
-            var time = +new Date;
-            
-            var l = self.jobs.length;
-            while (l--) {
-                var j = self.jobs[l];
-                var finish = j.finish, start = j.start, dur = j.dur, el = j.el, obj = j.obj, easing = j.easing;
-                var current = j.current, target = j.target;
-                var pos = time > finish ? 1 : (time - start) / dur;
-                
-                if (el && obj) {
-                    var v, now = {};
-                    for (var prop in obj) {
-                        v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
-                        now[prop] = v;
-                    }
-                    im.css(el, now);
-                }
-                
-                if (j.customHandler) j.customHandler.apply(el || window, [easing(pos)]);
-                
-                if (time >= finish) {
-                    self.jobs.splice(l, 1);
-                    if (j.callback) j.callback.apply(el);
-                }
-            }
-            
-            if (self.jobs.length == 0) self.stop();
-        };
-        
-        self.start = function() {
-            interval = setInterval(function(){self.render();}, 10);
-        };
-        
-        self.stop = function() {
-            interval = clearInterval(interval);
-        };
-        
-        self.add = function(job) {
-            self.jobs.push(job);
-            if (!interval) self.start();
-        };
-        
-        return self;
-    };
-    
-    /* ---------------------------------------------------------------------------
     im.animate - animates element to certain stylestring.
         param el (optional): element
         param obj (optional): object with style settings (just like im.css)
@@ -199,12 +143,10 @@ animation code based on http://github.com/madrobby/emile.
     --------------------------------------------------------------------------- */
     im.animate = function(el, obj, speed, callback, easing, customHandler) {
         
-        var job = {
-            current : {},
-            target : {},
-            obj : obj,
-            el : el
-            // and others added down
+        var job = { 
+            current : {}, target : {}, obj : obj, el : el, dur : speed ? speed : 300,
+            easing : easing || function(pos){ return (-Math.cos(pos*Math.PI)/2) + 0.5; },
+            callback : callback, customHandler : customHandler
         };
         
         // get current and target style        
@@ -218,18 +160,102 @@ animation code based on http://github.com/madrobby/emile.
             }
         }
         
-        job.start = +new Date;
-        job.dur = speed ? speed : 300;
-        job.finish = job.start + job.dur;
-        job.easing = easing || function(pos){ return (-Math.cos(pos*Math.PI)/2) + 0.5; };
-        
+        // add the job to the clock
         im.animate.clock.add(job);
     };
     
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    im.animate.clock = clock();
+    im.animate.clock = (function(){
+        
+        /* ---------------------------------------------------------------------------
+        instance
+        --------------------------------------------------------------------------- */
+        var self = {};
+        
+        /* ---------------------------------------------------------------------------
+        private
+        --------------------------------------------------------------------------- */
+        var interval;
+        
+        /* ---------------------------------------------------------------------------
+        public
+        --------------------------------------------------------------------------- */
+        
+        self.jobs = [];
+        
+        /* ---------------------------------------------------------------------------
+        render - renders a job at a certain time. Optionally a position can be given,
+        which will ignore the time and just pretend to be at position (0 >=< 1)
+        --------------------------------------------------------------------------- */
+        self.render = function(job, time, position) {
+            var j = job;
+            var finish = j.finish, start = j.start, dur = j.dur, el = j.el, obj = j.obj, easing = j.easing;
+            var current = j.current, target = j.target;
+            var pos = position === undefined ? (time >= finish ? 1 : (time - start) / dur) : position;
+            
+            if (el && obj) {
+                var v, now = {};
+                for (var prop in obj) {
+                    v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
+                    now[prop] = v;
+                }
+                im.css(el, now);
+            }
+                       
+            if (j.customHandler) j.customHandler.apply(el || window, [easing(pos)]);
+            if (pos === 1 && j.callback) j.callback.apply(el);
+            
+            return pos === 1;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        tick - handling of each click tick
+        --------------------------------------------------------------------------- */
+        self.tick = function(){
+            var time = +new Date, r = self.render, l = self.jobs.length;
+            while (l--) {
+                if (r(self.jobs[l], time)) self.jobs.splice(l, 1);
+            }
+            if (self.jobs.length == 0) self.stop();
+        };
+        
+        /* ---------------------------------------------------------------------------
+        start - start ticking
+        --------------------------------------------------------------------------- */
+        self.start = function() {
+            interval = setInterval(self.tick, 20);
+        };
+        
+        /* ---------------------------------------------------------------------------
+        stop - stop ticking
+        --------------------------------------------------------------------------- */
+        self.stop = function() {
+            if (interval) interval = clearInterval(interval);
+        };
+        
+        /* ---------------------------------------------------------------------------
+        remove - remove job at index i in jobs array
+        --------------------------------------------------------------------------- */
+        self.remove = function(i, end) {
+            if (!self.jobs[i]) return;
+            var job = self.jobs.splice(i, 1)[0];
+            if (end) self.render(job, 0, 1);
+        };
+        
+        /* ---------------------------------------------------------------------------
+        add - add job (object) and start it
+        --------------------------------------------------------------------------- */
+        self.add = function(job) {
+            self.jobs.push(job);
+            job.start = +new Date;
+            job.finish = job.start + job.dur;
+            if (!interval) self.start();
+        };
+    
+        return self;
+    })();
     
     /* ---------------------------------------------------------------------------
     chains.animate - wraps im.animate
@@ -241,20 +267,21 @@ animation code based on http://github.com/madrobby/emile.
     
     /* ---------------------------------------------------------------------------
     im.stop - stops all animations for an element.
+        param end (optional): set animation to end properties.
     --------------------------------------------------------------------------- */
-    im.stop = function(el) {
-        var data = im.data(el, 'animations') || [];
-        var l = data.length;
+    im.stop = function(el, end) {
+        var jobs = im.animate.clock.jobs;
+        var l = jobs.length;
         while (l--) {
-            clearInterval(data[l]);
+            if (jobs[l].el === el) im.animate.clock.remove(l, end);
         }
     };
 
     /* ---------------------------------------------------------------------------
     chains.stop - wraps im.stop
     --------------------------------------------------------------------------- */
-    im.chains.stop = function() {
-        for (var x = 0; x < this.length; x++) im.stop(this[x]);
+    im.chains.stop = function(end) {
+        for (var x = 0; x < this.length; x++) im.stop(this[x], end);
         return this;
     };
     
