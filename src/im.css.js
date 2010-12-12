@@ -110,6 +110,62 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    var clock = function() {
+        var self = {};
+        
+        var interval;
+        self.jobs = [];
+        
+        self.render = function(){
+            
+            var time = +new Date;
+            
+            var l = self.jobs.length;
+            while (l--) {
+                var j = self.jobs[l];
+                var finish = j.finish, start = j.start, dur = j.dur, el = j.el, obj = j.obj, easing = j.easing;
+                var current = j.current, target = j.target;
+                var pos = time > finish ? 1 : (time - start) / dur;
+                
+                if (el && obj) {
+                    var v, now = {};
+                    for (var prop in obj) {
+                        v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
+                        now[prop] = v;
+                    }
+                    im.css(el, now);
+                }
+                
+                if (j.customHandler) j.customHandler.apply(el || window, [easing(pos)]);
+                
+                if (time >= finish) {
+                    self.jobs.splice(l, 1);
+                    if (j.callback) j.callback.apply(el);
+                }
+            }
+            
+            if (self.jobs.length == 0) self.stop();
+        };
+        
+        self.start = function() {
+            interval = setInterval(function(){self.render();}, 10);
+        };
+        
+        self.stop = function() {
+            interval = clearInterval(interval);
+        };
+        
+        self.add = function(job) {
+            self.jobs.push(job);
+            if (!interval) self.start();
+        };
+        
+        return self;
+    };
+    
+    /* ---------------------------------------------------------------------------
     im.animate - animates element to certain stylestring.
         param el (optional): element
         param obj (optional): object with style settings (just like im.css)
@@ -143,58 +199,37 @@ animation code based on http://github.com/madrobby/emile.
     --------------------------------------------------------------------------- */
     im.animate = function(el, obj, speed, callback, easing, customHandler) {
         
-        // get current and target style
-        var current = {};
-        var target = {};
+        var job = {
+            current : {},
+            target : {},
+            obj : obj,
+            el : el
+            // and others added down
+        };
         
+        // get current and target style        
         // obj could be omitted in case of a bare customHandler setup
         if (el && obj) {
             for (var prop in obj) {
                 var currentValue = im.css(el, prop);
                 if (currentValue == 'auto') currentValue = '0'; // we can't do anything with auto, really
-                current[prop] = parseRule(currentValue);
-                target[prop] = parseRule(obj[prop] + '', currentValue);
+                job.current[prop] = parseRule(currentValue);
+                job.target[prop] = parseRule(obj[prop] + '', currentValue);
             }
         }
         
-        var start = +new Date;
-        var dur = speed ? speed : 300;
-        var finish = start + dur;
-        easing = easing || function(pos){ return (-Math.cos(pos*Math.PI)/2) + 0.5; };
+        job.start = +new Date;
+        job.dur = speed ? speed : 300;
+        job.finish = job.start + job.dur;
+        job.easing = easing || function(pos){ return (-Math.cos(pos*Math.PI)/2) + 0.5; };
         
-        var interval;
-        var step = function(){
-            var time = +new Date;
-            var pos = time > finish ? 1 : (time - start) / dur;
-            
-            if (el && obj) {
-                var v, now = {};
-                for (var prop in obj) {
-                    v = target[prop].method(current[prop].value, target[prop].value, easing(pos)) + target[prop].postfix;
-                    now[prop] = v;
-                }
-                im.css(el, now);
-            }
-            
-            if (customHandler) customHandler.apply(el || window, [easing(pos)]);
-            
-            if (time >= finish) {
-                clearInterval(interval);
-                if (callback) callback.apply(el);
-            }
-        };
-        interval = setInterval(step, 10);
-        
-        // store animation
-        if (el) {
-            var data = im.data(el, 'animations') || [];
-            data.push(interval);
-            im.data(el, 'animations', data);
-        }
-        
-        // return interval, in case one would like to control it.
-        return interval;
+        im.animate.clock.add(job);
     };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.animate.clock = clock();
     
     /* ---------------------------------------------------------------------------
     chains.animate - wraps im.animate
