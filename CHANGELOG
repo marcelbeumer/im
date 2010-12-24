@@ -1,0 +1,7 @@
+= 1.2 =
+
+* CSS selector caching mechanism.
+* Refactored animations to run on single clock.
+* Refactored events to allow custom event implementations.
+* Various little fixes.
+* Documentation.
