@@ -6,7 +6,7 @@ im.events.js
 (function(im){
     
     /* ---------------------------------------------------------------------------
-    
+    store - stores event data in certain key/bucket
     --------------------------------------------------------------------------- */
     var store = function(element, bucket, obj) {
         // get data storage
@@ -18,7 +18,7 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    unbind - generic unbind mechanism based on event bucket data
     --------------------------------------------------------------------------- */
     var unbind = function(element, bucket, options) {
         // get data
@@ -156,12 +156,14 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types - object that stores all event implementations. 
+    IM will take 'default' when it can not find im.bind.types[eventName].
     --------------------------------------------------------------------------- */
     im.bind.types = {};
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types['default'] - default event implementation, covers all standard
+    browser events and serves as a base class for other custom event implementations.
     --------------------------------------------------------------------------- */
     im.bind.types['default'] = function() {
         
@@ -259,7 +261,7 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    mouseEnterLeave - mouseenter / mouseleave implementation.
     --------------------------------------------------------------------------- */
     var mouseEnterLeave = function(name) {
         var self = im.bind.types['default']();

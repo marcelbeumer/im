@@ -110,7 +110,7 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
-    im.animate - animates element to certain stylestring.
+    im.animate - animates element to set of properties.
         param el (optional): element
         param obj (optional): object with style settings (just like im.css)
         param callback (optional): callback to execute when animation is done.
@@ -165,7 +165,11 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.animate.clock - animation clock.
+    IM runs all it animations on a single 'clock', that automatically starts and
+    stops its interval when there are animations to process or not.
+    IM uses a single clock to prevent unwanted UI rendering when running multiple 
+    animations at once.
     --------------------------------------------------------------------------- */
     im.animate.clock = (function(){
         
