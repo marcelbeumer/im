@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "1.2RC1";
+    var VERSION = "1.2";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -702,7 +702,7 @@ im.events.js
 (function(im){
     
     /* ---------------------------------------------------------------------------
-    
+    store - stores event data in certain key/bucket
     --------------------------------------------------------------------------- */
     var store = function(element, bucket, obj) {
         // get data storage
@@ -714,7 +714,7 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    unbind - generic unbind mechanism based on event bucket data
     --------------------------------------------------------------------------- */
     var unbind = function(element, bucket, options) {
         // get data
@@ -852,12 +852,14 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types - object that stores all event implementations. 
+    IM will take 'default' when it can not find im.bind.types[eventName].
     --------------------------------------------------------------------------- */
     im.bind.types = {};
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types['default'] - default event implementation, covers all standard
+    browser events and serves as a base class for other custom event implementations.
     --------------------------------------------------------------------------- */
     im.bind.types['default'] = function() {
         
@@ -955,7 +957,7 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    mouseEnterLeave - mouseenter / mouseleave implementation.
     --------------------------------------------------------------------------- */
     var mouseEnterLeave = function(name) {
         var self = im.bind.types['default']();
@@ -1196,7 +1198,7 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
-    im.animate - animates element to certain stylestring.
+    im.animate - animates element to set of properties.
         param el (optional): element
         param obj (optional): object with style settings (just like im.css)
         param callback (optional): callback to execute when animation is done.
@@ -1251,7 +1253,11 @@ animation code based on http://github.com/madrobby/emile.
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.animate.clock - animation clock.
+    IM runs all it animations on a single 'clock', that automatically starts and
+    stops its interval when there are animations to process or not.
+    IM uses a single clock to prevent unwanted UI rendering when running multiple 
+    animations at once.
     --------------------------------------------------------------------------- */
     im.animate.clock = (function(){
         
