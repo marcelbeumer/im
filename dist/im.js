@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "1.2";
+    var VERSION = "1.2.x-DEV";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -868,9 +868,10 @@ im.events.js
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
-        self.getEventObject = function(e) {
+        self.getEventObject = function(e, element) {
             e = e || window.event;
             if (!e.target) e.target = e.srcElement || document;
+            if (!e.currentTarget) e.currentTarget = element;
             if (e.target.nodeType === 3) event.target = event.target.parentNode;
             if (!e.preventDefault) e.preventDefault = function(){e.returnValue = false;};
             if (!e.stopPropagation) e.stopPropagation = function(){e.cancelBubble = true;};
@@ -930,7 +931,7 @@ im.events.js
             var that = self;
             
             var h = function(e) {
-                e = that.getEventObject(e);
+                e = that.getEventObject(e, element);
                 var r = handler.apply(element, [e]);
                 return that.returnValue(e, r);
             };
