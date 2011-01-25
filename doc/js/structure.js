@@ -33,6 +33,7 @@
                                 merge : {source : tpl.source('im/im.core.js', 'im.merge -')},
                                 extend : {source : tpl.source('im/im.core.js', 'im.extend -')},
                                 trim : {source : tpl.source('im/im.core.js', 'im.trim -')},
+                                proxy : {source : tpl.source('im/im.core.js', 'im.proxy -')},
                                 each : {source : tpl.source('im/im.core.js', 'im.each -')}
                             }
                         },

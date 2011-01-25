@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "1.2.x-DEV";
+    var VERSION = "post-1.2-dev";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -124,6 +124,15 @@ im.core.js
     };
     
     /* ---------------------------------------------------------------------------
+    im.proxy - returns scoped function.
+        param fn: function to scope
+        param scope: scope to run in
+    --------------------------------------------------------------------------- */
+    im.proxy = function(fn, scope) {
+        return function() {return fn.apply(scope, arguments);};
+    };
+    
+    /* ---------------------------------------------------------------------------
     im.chains - the container that holds all chaining functions. 
     Extending IM is done by adding a function to this object:
     
@@ -144,6 +153,10 @@ im.core.js
         this.length = 0;
         if (!selector) {
             // no selector, no nodes!
+        } else if (selector.nodeType) {
+            // we got passed a dom element
+            this.length = 1;
+            this[0] = selector;
         } else if (im.isString(selector)) {
             // we got passed a css selector or a html string, let's find out.
             if (selector.match('<.*>')) {
@@ -159,13 +172,14 @@ im.core.js
                 im.merge(this, im.selectNodes(selector, context));
             }
         } else if (im.isFunction(selector)) {
+            // we got passed an onready handler
             if (!im.onready) throw new Error("Chain: no onready implementation loaded");
             im.onready(selector);
         } else if (selector.length !== undefined) {
             // we got passed an array
             im.merge(this, selector);
         } else {
-            // we got passed a single object
+            // we got some object
             this.length = 1;
             this[0] = selector;
         }
@@ -994,14 +1008,16 @@ im.events.js
     
     --------------------------------------------------------------------------- */
     im.bind.types.mouseenter = function() {
-        return mouseEnterLeave('mouseenter');
+        // IE has a native mouseenter
+        return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseenter');
     };
     
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
     im.bind.types.mouseleave = function() {
-        return mouseEnterLeave('mouseleave');
+        // IE has a native mouseleave
+        return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
         
 })(window.im || window);
@@ -1752,7 +1768,7 @@ so it will not check the location in the DOM!
         '%? .class' - get mode
         Return cached result, returns empty array when not found.
         
-    electNodes will never use cached results without a caching prefix. 
+    selectNodes will never use cached results without a caching prefix. 
     --------------------------------------------------------------------------- */
     im.selectNodes = function(selector, context, resultArr) {
         

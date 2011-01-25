@@ -216,7 +216,7 @@ so it will not check the location in the DOM!
         '%? .class' - get mode
         Return cached result, returns empty array when not found.
         
-    electNodes will never use cached results without a caching prefix. 
+    selectNodes will never use cached results without a caching prefix. 
     --------------------------------------------------------------------------- */
     im.selectNodes = function(selector, context, resultArr) {
         

@@ -298,14 +298,16 @@ im.events.js
     
     --------------------------------------------------------------------------- */
     im.bind.types.mouseenter = function() {
-        return mouseEnterLeave('mouseenter');
+        // IE has a native mouseenter
+        return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseenter');
     };
     
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
     im.bind.types.mouseleave = function() {
-        return mouseEnterLeave('mouseleave');
+        // IE has a native mouseleave
+        return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
         
 })(window.im || window);
