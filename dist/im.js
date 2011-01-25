@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "post-1.2-dev";
+    var VERSION = "1.2.1";
     
     /* 
     keep reference to ns.im in case there was already something referenced
@@ -1019,7 +1019,7 @@ im.events.js
         // IE has a native mouseleave
         return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
-        
+    
 })(window.im || window);
 
 /* ---------------------------------------------------------------------------

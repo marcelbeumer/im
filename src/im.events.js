@@ -309,7 +309,7 @@ im.events.js
         // IE has a native mouseleave
         return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
-        
+    
 })(window.im || window);
 
 /* ---------------------------------------------------------------------------
