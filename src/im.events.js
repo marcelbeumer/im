@@ -315,23 +315,45 @@ im.events.js
     --------------------------------------------------------------------------- */
     var uniqueEventTypeFactory = function(impl) {
         
+        /* ---------------------------------------------------------------------------
+        type - the event type function
+        --------------------------------------------------------------------------- */
         var type = function() {
+            
+            /* ---------------------------------------------------------------------------
+            instance
+            --------------------------------------------------------------------------- */
             var self = {};
             
+            /* ---------------------------------------------------------------------------
+            private bindRealEvent - binds real browser event. Will ask implementation object
+            to actually bind.
+            --------------------------------------------------------------------------- */
             var bindRealEvent = function() {
                 if (type.bound) return;
                 impl.bindRealEvent(function(){type.run();});
             };
             
+            /* ---------------------------------------------------------------------------
+            public self.bind - binds event hanlder and pushes handler into handlers
+            array.
+            --------------------------------------------------------------------------- */
             self.bind = function(element, name, handler) {
                 if (type.done || !impl.validateElement(element)) return;
                 bindRealEvent();
                 if (im.isFunction(handler)) type.handlers.push(handler);
             };
             
+            /* ---------------------------------------------------------------------------
+            return instance
+            --------------------------------------------------------------------------- */
             return self;
         };
         
+        /* ---------------------------------------------------------------------------
+        static type.run - runs all handlers on the event type, and sets the event as 'done'.
+        Will only run once.
+        --------------------------------------------------------------------------- */
         type.run = function() {
             if (type.done) return;
             type.done = true;
@@ -342,15 +364,21 @@ im.events.js
             }
         };
         
-        type.handlers = [];
-        type.done = false;
-        type.bound = false;
+        /* ---------------------------------------------------------------------------
+        static properties
+        --------------------------------------------------------------------------- */
+        type.handlers = []; // array with handlers
+        type.done = false; // event done or not
+        type.bound = false; // real event is bound
         
+        /* ---------------------------------------------------------------------------
+        return function
+        --------------------------------------------------------------------------- */
         return type;
     };
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types.ready - cross browser implementation of DOMContentLoaded event.
     --------------------------------------------------------------------------- */
     im.bind.types.ready = (function(){
         var impl = {};
@@ -400,7 +428,8 @@ im.events.js
     })();
     
     /* ---------------------------------------------------------------------------
-    
+    im.bind.types.load - window.onload wrapper so we can make sure the onready
+    event happens before onload.
     --------------------------------------------------------------------------- */
     im.bind.types.load = (function() {
         var impl = {};
@@ -425,8 +454,7 @@ im.events.js
     })();
     
     /* ---------------------------------------------------------------------------
-    im.onready - bind event handler on the DOM Document Ready event, and emulates
-    it for browser that do not support it. Always fail-safes to onload event.
+    im.onready - binds onready event handler to document
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
         im.bind(document, 'ready', handler);
