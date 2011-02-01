@@ -5,7 +5,14 @@
         <script src="../../src/im.events.js"></script>
         <script src="../../plugins/im.console.js"></script>
         <script>
+        
+            im.onload(function(){
+                console.info('onload');
+            });
+            
             im(function(){
+                console.info('onready');
+                
                 im('p').bind('mouseenter', function(){
                     im(this).css({backgroundColor : 'blue'});
                 }).bind('mouseleave', function(){

@@ -310,79 +310,126 @@ im.events.js
         return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
     
-})(window.im || window);
-
-/* ---------------------------------------------------------------------------
-DOMDocumentReady and onLoad implementation by marcel@marcelbeumer.com. 
-Based on jQuery bindReady code.
---------------------------------------------------------------------------- */
-(function(im){
-    
-    var readyHandlers = [];
-    var readyBound = false;
-    var isReady = false;
-    
     /* ---------------------------------------------------------------------------
-    --------------------------------------------------------------------------- */
-    var ready = function() {
-        if (isReady) return;
-        isReady = true;
-        var l = readyHandlers.length;
-        for (var x = 0; x < l; x++) {
-            readyHandlers[x]();
-        }
-    };
     
-    /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
-    var bindReady = function() {
-        if (readyBound) return;
-        readyBound = true;
+    var uniqueEventTypeFactory = function(impl) {
         
-        if (document.addEventListener && !im.browser.opera) {
-            document.addEventListener( "DOMContentLoaded", ready, false );
-        }
+        var type = function() {
+            var self = {};
+            
+            var bindRealEvent = function() {
+                if (type.bound) return;
+                impl.bindRealEvent(function(){type.run();});
+            };
+            
+            self.bind = function(element, name, handler) {
+                if (type.done || !impl.validateElement(element)) return;
+                bindRealEvent();
+                if (im.isFunction(handler)) type.handlers.push(handler);
+            };
+            
+            return self;
+        };
         
-        // If IE is used and is not in a frame
-        // Continually check to see if the document is ready
-        if (im.browser.msie && window == top ) (function(){
-            if (isReady) return;
-            try {
-                // If IE is used, use the trick by Diego Perini
-                // http://javascript.nwbox.com/IEContentLoaded/
-                document.documentElement.doScroll("left");
-            } catch(e) {
-                setTimeout(arguments.callee, 0);
-                return;
+        type.run = function() {
+            if (type.done) return;
+            type.done = true;
+            if (impl.beforeRun) impl.beforeRun();
+            var l = type.handlers.length;
+            for (var x = 0; x < l; x++) {
+                type.handlers[x]();
             }
-            // and execute any waiting functions
-            ready();
-        })();
+        };
         
-        if (im.browser.opera ) {
-            document.addEventListener( "DOMContentLoaded", function () {
-                if (isReady) return;
-                for (var i = 0; i < document.styleSheets.length; i++) {
-                    if (document.styleSheets[i].disabled) {
-                        setTimeout( arguments.callee, 0 );
-                        return;
-                    }
-                }
-                // and execute any waiting functions
-                ready();
-            }, false);
-        }
+        type.handlers = [];
+        type.done = false;
+        type.bound = false;
         
-        im.bind(window, 'load', ready);
+        return type;
     };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types.ready = (function(){
+        var impl = {};
+        
+        var explorerScrollCheck = function(callback) {
+            // used toplevel check from jQuery 1.5
+            var toplevel = false;
+            try {
+                toplevel = window.frameElement == null;
+            } catch(e) {}
+            
+            if (toplevel) (function(){
+                try {
+                    // http://javascript.nwbox.com/IEContentLoaded/
+                    document.documentElement.doScroll("left");
+                } catch(e) {
+                    setTimeout(arguments.callee, 0);
+                    return;
+                }
+                callback();
+            })();
+        };
+        
+        impl.validateElement = function(element) {
+            return element === document;
+        };
+        
+        impl.bindRealEvent = function(callback) {
+            if (document.addEventListener) {
+                // the proper way
+                document.addEventListener("DOMContentLoaded", callback, false);
+                
+            } else if (window.attachEvent) {
+                // might be late
+                document.attachEvent("onreadystatechange", function(){
+                    if (document.readyState === "complete") callback();
+                });
+                // should work
+                if (im.browser.msie) explorerScrollCheck(callback);
+            }
+            
+            // always safe
+            im.bind(window, 'load', callback);
+        };
+        
+        return uniqueEventTypeFactory(impl);
+    })();
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.bind.types.load = (function() {
+        var impl = {};
+        
+        impl.validateElement = function(element) {
+            return element === window;
+        };
+        
+        impl.bindRealEvent = function(callback) {
+            if (window.addEventListener) {
+                window.addEventListener("load", callback, false);
+            } else if (window.attachEvent) {
+                window.attachEvent("onload", callback);
+            }
+        };
+        
+        impl.beforeRun = function() {
+            im.bind.types.ready.run();
+        };
+        
+        return uniqueEventTypeFactory(impl);
+    })();
     
     /* ---------------------------------------------------------------------------
     im.onready - bind event handler on the DOM Document Ready event, and emulates
     it for browser that do not support it. Always fail-safes to onload event.
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
-        readyHandlers.push(handler);
-        bindReady();
+        im.bind(document, 'ready', handler);
     };
     
     /* ---------------------------------------------------------------------------
