@@ -311,7 +311,7 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    
+    uniqueEventTypeFactory - 
     --------------------------------------------------------------------------- */
     var uniqueEventTypeFactory = function(impl) {
         
@@ -359,9 +359,8 @@ im.events.js
             type.done = true;
             if (impl.beforeRun) impl.beforeRun();
             var l = type.handlers.length;
-            for (var x = 0; x < l; x++) {
-                type.handlers[x]();
-            }
+            for (var x = 0; x < l; x++) {type.handlers[x]();}
+            type.handlers = null; // deref.
         };
         
         /* ---------------------------------------------------------------------------
@@ -378,21 +377,27 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    im.bind.types.ready - cross browser implementation of DOMContentLoaded event.
+    im.bind.types.ready - cross browser implementation of DOMContentLoaded event
     --------------------------------------------------------------------------- */
     im.bind.types.ready = (function(){
+        
+        /* ---------------------------------------------------------------------------
+        specific implementation of unique event type
+        --------------------------------------------------------------------------- */
         var impl = {};
         
+        /* ---------------------------------------------------------------------------
+        explorer scroll onready check.
+        based on http://javascript.nwbox.com/IEContentLoaded/ and jQuery
+        --------------------------------------------------------------------------- */
         var explorerScrollCheck = function(callback) {
-            // used toplevel check from jQuery 1.5
+            // check if we are the top level window
             var toplevel = false;
-            try {
-                toplevel = window.frameElement == null;
-            } catch(e) {}
+            try {toplevel = window.frameElement == null;} catch(e) {}
             
+            // when can only do this trick when we are toplevel.
             if (toplevel) (function(){
                 try {
-                    // http://javascript.nwbox.com/IEContentLoaded/
                     document.documentElement.doScroll("left");
                 } catch(e) {
                     setTimeout(arguments.callee, 0);
@@ -402,10 +407,15 @@ im.events.js
             })();
         };
         
-        impl.validateElement = function(element) {
-            return element === document;
-        };
+        /* ---------------------------------------------------------------------------
+        impl.validateElement - will only bind this event to the document
+        --------------------------------------------------------------------------- */
+        impl.validateElement = function(element) {return element === document;};
         
+        /* ---------------------------------------------------------------------------
+        impl.bindRealEvent - bind the actual browser events, and do some tricks
+        for some browsers. Also, bind to onload to be sure.
+        --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
             if (document.addEventListener) {
                 // the proper way
@@ -424,6 +434,9 @@ im.events.js
             im.bind(window, 'load', callback);
         };
         
+        /* ---------------------------------------------------------------------------
+        return unique event type based on this implementation
+        --------------------------------------------------------------------------- */
         return uniqueEventTypeFactory(impl);
     })();
     
@@ -432,12 +445,22 @@ im.events.js
     event happens before onload.
     --------------------------------------------------------------------------- */
     im.bind.types.load = (function() {
+        
+        /* ---------------------------------------------------------------------------
+        specific implementation of unique event type
+        --------------------------------------------------------------------------- */
         var impl = {};
         
+        /* ---------------------------------------------------------------------------
+        impl.validateElement - will only bind this event to the window object
+        --------------------------------------------------------------------------- */
         impl.validateElement = function(element) {
             return element === window;
         };
         
+        /* ---------------------------------------------------------------------------
+        impl.bindRealEvent - bind the actual browser event.
+        --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
             if (window.addEventListener) {
                 window.addEventListener("load", callback, false);
@@ -446,10 +469,16 @@ im.events.js
             }
         };
         
+        /* ---------------------------------------------------------------------------
+        impl.beforeRun - hook that will run ready event handlers.
+        --------------------------------------------------------------------------- */
         impl.beforeRun = function() {
             im.bind.types.ready.run();
         };
         
+        /* ---------------------------------------------------------------------------
+        return unique event type based on this implementation
+        --------------------------------------------------------------------------- */
         return uniqueEventTypeFactory(impl);
     })();
     
