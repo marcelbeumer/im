@@ -326,12 +326,20 @@ im.events.js
             var self = {};
             
             /* ---------------------------------------------------------------------------
+            private bindRealEventCallback
+            --------------------------------------------------------------------------- */
+            var bindRealEventCallback = function() {
+                type.run();
+                impl.unbindRealEvent(bindRealEventCallback);
+            };
+            
+            /* ---------------------------------------------------------------------------
             private bindRealEvent - binds real browser event. Will ask implementation object
             to actually bind.
             --------------------------------------------------------------------------- */
             var bindRealEvent = function() {
                 if (type.bound) return;
-                impl.bindRealEvent(function(){type.run();});
+                impl.bindRealEvent(bindRealEventCallback);
             };
             
             /* ---------------------------------------------------------------------------
@@ -387,6 +395,11 @@ im.events.js
         var impl = {};
         
         /* ---------------------------------------------------------------------------
+        private properties
+        --------------------------------------------------------------------------- */
+        var _callback;
+        
+        /* ---------------------------------------------------------------------------
         explorer scroll onready check.
         based on http://javascript.nwbox.com/IEContentLoaded/ and jQuery
         --------------------------------------------------------------------------- */
@@ -419,19 +432,30 @@ im.events.js
         impl.bindRealEvent = function(callback) {
             if (document.addEventListener) {
                 // the proper way
-                document.addEventListener("DOMContentLoaded", callback, false);
+                _callback = callback;
+                document.addEventListener("DOMContentLoaded", _callback, false);
                 
             } else if (window.attachEvent) {
                 // might be late
-                document.attachEvent("onreadystatechange", function(){
-                    if (document.readyState === "complete") callback();
-                });
+                _callback = function(){if (document.readyState === "complete") callback();};
+                document.attachEvent("onreadystatechange", _callback);
                 // should work
                 if (im.browser.msie) explorerScrollCheck(callback);
             }
             
             // always safe
             im.bind(window, 'load', callback);
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.unbindRealEvent - unbind browser events
+        --------------------------------------------------------------------------- */
+        impl.unbindRealEvent = function(callback) {
+            if (document.removeEventListener) {
+                document.removeEventListener("DOMContentLoaded", _callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onreadystatechange", _callback);
+            }
         };
         
         /* ---------------------------------------------------------------------------
@@ -466,6 +490,17 @@ im.events.js
                 window.addEventListener("load", callback, false);
             } else if (window.attachEvent) {
                 window.attachEvent("onload", callback);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.unbindRealEvent - unbind browser events
+        --------------------------------------------------------------------------- */
+        impl.unbindRealEvent = function(callback) {
+            if (document.removeEventListener) {
+                document.removeEventListener("load", callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onload", callback);
             }
         };
         
