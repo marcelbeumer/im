@@ -13,8 +13,8 @@
                 var paginatorKey = im.hash.getIncrementalKey('pgnp', function(value){
                     console.log('paginator page value changed: ' + value);
                 });
-                var paginatorPage = im.hash.get(paginatorKey.name);
-                im.hash.set(paginatorKey.name, 10);
+                var paginatorPage = im.hash.get(paginatorKey);
+                im.hash.set(paginatorKey, 10);
                 
                 var navigationKey = im.hash.getUniqueKey('navi', function(value){
                     console.log('navi value changed: ' + value);

@@ -108,7 +108,7 @@ TODO:
             if (!self.keyAvailable(name)) return false;
             var k = {name : name, onchange : onchange};
             _keys[name] = k;
-            return _keys[name];
+            return name;
         };
         
         /* ---------------------------------------------------------------------------
