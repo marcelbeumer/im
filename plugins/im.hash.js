@@ -104,9 +104,9 @@ TODO:
         param type: storage type (only 'hash' for now)
         param onchange: onchange handler, in case the hash changes.
         --------------------------------------------------------------------------- */
-        self.getUniqueKey = function(name, type, onchange) {
+        self.getUniqueKey = function(name, onchange) {
             if (!self.keyAvailable(name)) return false;
-            var k = {name : name, type : type, onchange : onchange};
+            var k = {name : name, onchange : onchange};
             _keys[name] = k;
             return _keys[name];
         };
@@ -141,9 +141,7 @@ TODO:
         self.save = function() {
             var hash = '';
             for (var name in _keys) {
-                if (_keys[name].type == 'hash') {
-                    hash += (hash == '' ? '' : '&') + enc(name) + '=' + enc(_values[name]);
-                }
+                hash += (hash == '' ? '' : '&') + enc(name) + '=' + enc(_values[name]);
             }
             if (hash != '') {
                 hash = '*' + enc(hash) + '*';
