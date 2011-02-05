@@ -311,7 +311,8 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    uniqueEventTypeFactory - 
+    uniqueEventTypeFactory - simple boiler plate for unique one time events such
+    as onready and onload (or any custom one).
     --------------------------------------------------------------------------- */
     var uniqueEventTypeFactory = function(impl) {
         
