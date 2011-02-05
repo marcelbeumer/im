@@ -310,79 +310,218 @@ im.events.js
         return im.browser.msie ? im.bind.types['default']() : mouseEnterLeave('mouseleave');
     };
     
-})(window.im || window);
-
-/* ---------------------------------------------------------------------------
-DOMDocumentReady and onLoad implementation by marcel@marcelbeumer.com. 
-Based on jQuery bindReady code.
---------------------------------------------------------------------------- */
-(function(im){
-    
-    var readyHandlers = [];
-    var readyBound = false;
-    var isReady = false;
-    
     /* ---------------------------------------------------------------------------
+    uniqueEventTypeFactory - 
     --------------------------------------------------------------------------- */
-    var ready = function() {
-        if (isReady) return;
-        isReady = true;
-        var l = readyHandlers.length;
-        for (var x = 0; x < l; x++) {
-            readyHandlers[x]();
-        }
+    var uniqueEventTypeFactory = function(impl) {
+        
+        /* ---------------------------------------------------------------------------
+        type - the event type function
+        --------------------------------------------------------------------------- */
+        var type = function() {
+            
+            /* ---------------------------------------------------------------------------
+            instance
+            --------------------------------------------------------------------------- */
+            var self = {};
+            
+            /* ---------------------------------------------------------------------------
+            private bindRealEventCallback
+            --------------------------------------------------------------------------- */
+            var bindRealEventCallback = function() {
+                type.run();
+                impl.unbindRealEvent(bindRealEventCallback);
+            };
+            
+            /* ---------------------------------------------------------------------------
+            private bindRealEvent - binds real browser event. Will ask implementation object
+            to actually bind.
+            --------------------------------------------------------------------------- */
+            var bindRealEvent = function() {
+                if (type.bound) return;
+                impl.bindRealEvent(bindRealEventCallback);
+            };
+            
+            /* ---------------------------------------------------------------------------
+            public self.bind - binds event hanlder and pushes handler into handlers
+            array.
+            --------------------------------------------------------------------------- */
+            self.bind = function(element, name, handler) {
+                if (type.done || !impl.validateElement(element)) return;
+                bindRealEvent();
+                if (im.isFunction(handler)) type.handlers.push(handler);
+            };
+            
+            /* ---------------------------------------------------------------------------
+            return instance
+            --------------------------------------------------------------------------- */
+            return self;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        static type.run - runs all handlers on the event type, and sets the event as 'done'.
+        Will only run once.
+        --------------------------------------------------------------------------- */
+        type.run = function() {
+            if (type.done) return;
+            type.done = true;
+            if (impl.beforeRun) impl.beforeRun();
+            var l = type.handlers.length;
+            for (var x = 0; x < l; x++) {type.handlers[x]();}
+            type.handlers = null; // deref.
+        };
+        
+        /* ---------------------------------------------------------------------------
+        static properties
+        --------------------------------------------------------------------------- */
+        type.handlers = []; // array with handlers
+        type.done = false; // event done or not
+        type.bound = false; // real event is bound
+        
+        /* ---------------------------------------------------------------------------
+        return function
+        --------------------------------------------------------------------------- */
+        return type;
     };
     
     /* ---------------------------------------------------------------------------
+    im.bind.types.ready - cross browser implementation of DOMContentLoaded event
     --------------------------------------------------------------------------- */
-    var bindReady = function() {
-        if (readyBound) return;
-        readyBound = true;
+    im.bind.types.ready = (function(){
         
-        if (document.addEventListener && !im.browser.opera) {
-            document.addEventListener( "DOMContentLoaded", ready, false );
-        }
+        /* ---------------------------------------------------------------------------
+        specific implementation of unique event type
+        --------------------------------------------------------------------------- */
+        var impl = {};
         
-        // If IE is used and is not in a frame
-        // Continually check to see if the document is ready
-        if (im.browser.msie && window == top ) (function(){
-            if (isReady) return;
-            try {
-                // If IE is used, use the trick by Diego Perini
-                // http://javascript.nwbox.com/IEContentLoaded/
-                document.documentElement.doScroll("left");
-            } catch(e) {
-                setTimeout(arguments.callee, 0);
-                return;
-            }
-            // and execute any waiting functions
-            ready();
-        })();
+        /* ---------------------------------------------------------------------------
+        private properties
+        --------------------------------------------------------------------------- */
+        var _callback;
         
-        if (im.browser.opera ) {
-            document.addEventListener( "DOMContentLoaded", function () {
-                if (isReady) return;
-                for (var i = 0; i < document.styleSheets.length; i++) {
-                    if (document.styleSheets[i].disabled) {
-                        setTimeout( arguments.callee, 0 );
-                        return;
-                    }
+        /* ---------------------------------------------------------------------------
+        explorer scroll onready check.
+        based on http://javascript.nwbox.com/IEContentLoaded/ and jQuery
+        --------------------------------------------------------------------------- */
+        var explorerScrollCheck = function(callback) {
+            // check if we are the top level window
+            var toplevel = false;
+            try {toplevel = window.frameElement == null;} catch(e) {}
+            
+            // when can only do this trick when we are toplevel.
+            if (toplevel) (function(){
+                try {
+                    document.documentElement.doScroll("left");
+                } catch(e) {
+                    setTimeout(arguments.callee, 0);
+                    return;
                 }
-                // and execute any waiting functions
-                ready();
-            }, false);
-        }
+                callback();
+            })();
+        };
         
-        im.bind(window, 'load', ready);
-    };
+        /* ---------------------------------------------------------------------------
+        impl.validateElement - will only bind this event to the document
+        --------------------------------------------------------------------------- */
+        impl.validateElement = function(element) {return element === document;};
+        
+        /* ---------------------------------------------------------------------------
+        impl.bindRealEvent - bind the actual browser events, and do some tricks
+        for some browsers. Also, bind to onload to be sure.
+        --------------------------------------------------------------------------- */
+        impl.bindRealEvent = function(callback) {
+            if (document.addEventListener) {
+                // the proper way
+                _callback = callback;
+                document.addEventListener("DOMContentLoaded", _callback, false);
+                
+            } else if (window.attachEvent) {
+                // might be late
+                _callback = function(){if (document.readyState === "complete") callback();};
+                document.attachEvent("onreadystatechange", _callback);
+                // should work
+                if (im.browser.msie) explorerScrollCheck(callback);
+            }
+            
+            // always safe
+            im.bind(window, 'load', callback);
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.unbindRealEvent - unbind browser events
+        --------------------------------------------------------------------------- */
+        impl.unbindRealEvent = function(callback) {
+            if (document.removeEventListener) {
+                document.removeEventListener("DOMContentLoaded", _callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onreadystatechange", _callback);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        return unique event type based on this implementation
+        --------------------------------------------------------------------------- */
+        return uniqueEventTypeFactory(impl);
+    })();
     
     /* ---------------------------------------------------------------------------
-    im.onready - bind event handler on the DOM Document Ready event, and emulates
-    it for browser that do not support it. Always fail-safes to onload event.
+    im.bind.types.load - window.onload wrapper so we can make sure the onready
+    event happens before onload.
+    --------------------------------------------------------------------------- */
+    im.bind.types.load = (function() {
+        
+        /* ---------------------------------------------------------------------------
+        specific implementation of unique event type
+        --------------------------------------------------------------------------- */
+        var impl = {};
+        
+        /* ---------------------------------------------------------------------------
+        impl.validateElement - will only bind this event to the window object
+        --------------------------------------------------------------------------- */
+        impl.validateElement = function(element) {
+            return element === window;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.bindRealEvent - bind the actual browser event.
+        --------------------------------------------------------------------------- */
+        impl.bindRealEvent = function(callback) {
+            if (window.addEventListener) {
+                window.addEventListener("load", callback, false);
+            } else if (window.attachEvent) {
+                window.attachEvent("onload", callback);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.unbindRealEvent - unbind browser events
+        --------------------------------------------------------------------------- */
+        impl.unbindRealEvent = function(callback) {
+            if (document.removeEventListener) {
+                document.removeEventListener("load", callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onload", callback);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        impl.beforeRun - hook that will run ready event handlers.
+        --------------------------------------------------------------------------- */
+        impl.beforeRun = function() {
+            im.bind.types.ready.run();
+        };
+        
+        /* ---------------------------------------------------------------------------
+        return unique event type based on this implementation
+        --------------------------------------------------------------------------- */
+        return uniqueEventTypeFactory(impl);
+    })();
+    
+    /* ---------------------------------------------------------------------------
+    im.onready - binds onready event handler to document
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
-        readyHandlers.push(handler);
-        bindReady();
+        im.bind(document, 'ready', handler);
     };
     
     /* ---------------------------------------------------------------------------

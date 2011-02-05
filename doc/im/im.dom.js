@@ -286,7 +286,7 @@ im.dom.js
     im.remove - removes element (from parent)
     --------------------------------------------------------------------------- */
     im.remove = function(element) {
-        element.parentNode.removeChild(element);
+        if (element && element.parentNode) element.parentNode.removeChild(element);
     };
 
     /* ---------------------------------------------------------------------------
