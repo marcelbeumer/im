@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-im.hash - im hash storage and events plugin
+im.hash - im hash data manager plugin.
  
 TODO:
     - gracefully update the hash without replacing it completely (in case other use the hash as well)
@@ -192,4 +192,4 @@ TODO:
     --------------------------------------------------------------------------- */
     ns.hash = hash();
     
-})(window || window.im);
+})(window.im || window);
