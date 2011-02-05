@@ -2,25 +2,25 @@
 <html>
     <head>
         <script src="../../dist/im.js"></script>
-        <script src="../../plugins/im.stateStorage.js"></script>
+        <script src="../../plugins/im.hash.js"></script>
         <script src="../../plugins/im.console.js"></script>
         <script>
         
             im(function(){
                 
-                im.stateStorage.init();
+                im.hash.init();
                 
-                var paginatorKey = im.stateStorage.getIncrementalKey('pgnp', 'hash', function(value){
+                var paginatorKey = im.hash.getIncrementalKey('pgnp', 'hash', function(value){
                     console.log('paginator page value changed: ' + value);
                 });
-                var paginatorPage = im.stateStorage.get(paginatorKey.name);
-                im.stateStorage.set(paginatorKey.name, 10);
+                var paginatorPage = im.hash.get(paginatorKey.name);
+                im.hash.set(paginatorKey.name, 10);
                 
-                var navigationKey = im.stateStorage.getUniqueKey('navi', 'hash', function(value){
+                var navigationKey = im.hash.getUniqueKey('navi', 'hash', function(value){
                     console.log('navi value changed: ' + value);
                 });
                 
-                im.stateStorage.save();
+                im.hash.save();
             });
         </script>
     </head>

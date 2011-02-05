@@ -1,21 +1,17 @@
 /* ---------------------------------------------------------------------------
-im.stateStorage - im state storage plugin
-
- - get/set state entry for id
- - store state in hash, local storage or cookies.
+im.hash - im hash storage and events plugin
  
 TODO:
-    - other storage next to hash
     - gracefully update the hash without replacing it completely (in case other use the hash as well)
     - check hash length and detect when it's too long
     - hash sanity checks
 --------------------------------------------------------------------------- */
-(function(){
+(function(ns){
     
     /* ---------------------------------------------------------------------------
-    stateStorage - constructor
+    hash - constructor
     --------------------------------------------------------------------------- */
-    var stateStorage = function() {
+    var hash = function() {
         
         /* ---------------------------------------------------------------------------
         instance
@@ -125,7 +121,7 @@ TODO:
         self.set = function(key, value, trigger) {
             if (_values[key] == value) return;
             _values[key] = value;
-            if (trigger && _keys[key] && im.isFunction(_keys[key].onchange)) {
+            if (trigger && _keys[key] && _keys[key].onchange) {
                 _keys[key].onchange(value);
             }
         };
@@ -174,7 +170,7 @@ TODO:
         };
         
         /* ---------------------------------------------------------------------------
-        self.init - initializes state storage.
+        self.init - initializes
         --------------------------------------------------------------------------- */
         self.init = function() {
             
@@ -194,6 +190,6 @@ TODO:
     /* ---------------------------------------------------------------------------
     singleton
     --------------------------------------------------------------------------- */
-    im.stateStorage = stateStorage();
+    ns.hash = hash();
     
-})();
+})(window || window.im);
