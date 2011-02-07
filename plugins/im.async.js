@@ -77,7 +77,7 @@ im('.element').async(1000)
     };
 
     /* ---------------------------------------------------------------------------
-    chains.cancel - cancels all async store
+    chains.cancel - cancels all async store and goes back to sync mode
     --------------------------------------------------------------------------- */
     im.chains.cancel = function() {
         if (!this.__asyncstores) return this;
@@ -89,7 +89,7 @@ im('.element').async(1000)
         }
         delete this.__asyncstores;
         
-        return this;
+        return this.sync();
     };
     
     /* ---------------------------------------------------------------------------
