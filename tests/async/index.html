@@ -16,6 +16,10 @@
                     }).css({backgroundColor : 'blue'});
                     
                     console.info('<after end of chain, end of function>');
+                    
+                    im('.foo').async(1000).exec(function(){
+                        alert('x');
+                    }).cancel();
                 }); 
             });
         </script>

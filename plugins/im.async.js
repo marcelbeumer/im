@@ -32,7 +32,7 @@ im('.element').async(1000)
     var stubChain = function(obj, store) {
         var s = store;
         for (var name in im.chains) {
-            if (name != 'sync') obj[name] = createMemorizer(name, s);
+            if (name != 'sync' && name != 'cancel') obj[name] = createMemorizer(name, s);
         }
     };
     
@@ -57,6 +57,10 @@ im('.element').async(1000)
         
         // array where we store all calls in async mode
         var store = [];
+        
+        // keep track of all stores, so we can clear them later
+        this.__asyncstores = this.__asyncstores || [];
+        this.__asyncstores.push(store);
 
         // stub the chain right away
         stubChain(this, store);
@@ -68,6 +72,22 @@ im('.element').async(1000)
             // run stored chain calls normally
             im.each(store, function(){that = that[this.name].apply(that, this.arg);});
         }, t);
+        
+        return this;
+    };
+
+    /* ---------------------------------------------------------------------------
+    chains.cancel - cancels all async store
+    --------------------------------------------------------------------------- */
+    im.chains.cancel = function() {
+        if (!this.__asyncstores) return this;
+        
+        var l = this.__asyncstores.length;
+        while (l--) {
+            var s = this.__asyncstores[l];
+            s.splice(0, s.length);
+        }
+        delete this.__asyncstores;
         
         return this;
     };
