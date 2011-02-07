@@ -22,13 +22,16 @@
         
             var template = '\
                 <% extend base %>\
-                <div class="widget <%=active ? \'active\' : \'\'%>">\
+                Try to change \'base\' to anything else to \'break\' extension.\
+                This text will not be included in the output when extending...\
                 <% block foo %>\
-                <% for (var name in people) { %>\
-                    <div class="person"><%=people[name].email%> is \'here\'</div>\
-                <% }%>\
+                    <div class="widget <%=active ? \'active\' : \'\'%>">\
+                    <% for (var name in people) { %>\
+                        <div class="person"><%=people[name].email%> is \'here\'</div>\
+                    <% }%>\
+                    </div>\
                 <% endblock %>\
-                </div>\
+                This text will not be included in the output when extending...\
             ';
         
             im(function(){
