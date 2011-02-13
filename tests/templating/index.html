@@ -11,6 +11,10 @@
             .person {border:1px solid #aaa;margin:10px;}
         </style>
         <script>
+        
+            var banner = '\
+                <div>....include...</div>\
+            ';
 
             var base = '\
                 <div class="wrapper">\
@@ -28,9 +32,14 @@
                 \
                 <% block foo %>\
                     <div class="widget <%=active ? \'active\' : \'\'%>">\
-                    <% for (var name in people) { %>\
+                    <%: for (var name in people) { %>\
                         <div class="person"><%=people[name].email%> is \'here\'</div>\
-                    <% }%>\
+                    <%: }%>\
+                    <% include banner %>\
+                    \
+                    <% mytag %>\
+                    \
+                    <% endmytag %>\
                     </div>\
                 <% endblock %>\
                 \
@@ -47,10 +56,14 @@
                     }
                 };
                 
+                var library = {
+                    base : im.template(base),
+                    banner : im.template(banner)
+                };
+                
                 var tpl = im.template(template);
-                var html = tpl.render(data, {
-                    base : im.template(base)
-                });
+                console.log(tpl.parse(library).getCode());
+                var html = tpl.render(data, library);
                 
                 im('body').html(html);
             });

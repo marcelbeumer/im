@@ -45,7 +45,7 @@ im.template
             t = t.replace(/(<%)\s*?(\S+)/g, '$1$2');
             
             // insert tabs and use them later to split on
-            t = t.replace(/(<%(\s*?(=|block|endblock|extend))?)/g, '\t$1\t');
+            t = t.replace(/(<%(\s*?(=|:|block|endblock|extend|include))?)/g, '\t$1\t');
             t = t.replace(/(%>)/g, '\t$1\t');
             
             // split into chunks that we can process
@@ -63,7 +63,7 @@ im.template
                 var c = chunks[x];
                 if (c == '<%=') { // value
                     mode = 'value';
-                } else if (c == '<%') { // code
+                } else if (c == '<%:') { // code
                     mode = 'code';
                 } else if (c == '%>'){  // back to text
                     mode = 'text';
@@ -75,21 +75,31 @@ im.template
                     mode = 'endblock';
                 } else if (c == '<%extend') {
                     mode = 'extend';
+                } else if (c == '<%include') {
+                    mode = 'include';
                 } else { // process within mode
                     
                     if (mode == 'text') {
-                        code.push('o.push(\'' + c.replace(/'/g, "\\'") + '\');');
+                        code.push('/* user txt */ o.push(\'' + c.replace(/'/g, "\\'") + '\');');
                     } else if (mode == 'value') {
-                        code.push('o.push(' + c + ');');
+                        code.push('/* user value */ o.push(' + c + ');');
                     } else if (mode == 'code') {
-                        code.push(c);
+                        code.push('/* user code */' + c);
                     } else if (mode == 'extend') {
                         var name = im.trim(c);
                         var ft = _library[name]; // foreign template
                         if (!ft) continue;
-                        var fcode = 'var extend = function(obj, blocks){' + 
-                            ft.parse().getCode() + '};';
+                        var fcode = '/* extend ' + name + ' */ var extend = function(obj, blocks){' + 
+                            ft.parse(library).getCode() + '};';
                         extcode.push(fcode);
+                    } else if (mode == 'include') {
+                        var name = im.trim(c);
+                        var ft = _library[name]; // foreign template
+                        if (!ft) continue;
+                        var fcode = '/* include */ var ' + name + '__include__ = function(obj, blocks){' +
+                            ft.parse(library).getCode() + '};';
+                        extcode.push(fcode);
+                        code.push('o.push(' + name + '__include__(obj, blocks));');
                     } else if (mode == 'block') {
                         var name = blocks[blockc] = im.trim(c);
                         code.push('if (eb[\'' + name + '\']) o.push(eb[\'' + name + '\']);');
@@ -105,9 +115,7 @@ im.template
             _code = "var o = []; var extend = null; var b = {}; var eb = blocks || {};" + extcode.join('') +
                 "with (obj) { " + 
                     code.join('') + 
-                "} if (extend) {return extend(obj, b);} else {return o.join('')}";
-            
-            //console.log(_code);
+                "} if (extend) {return extend(obj, b);} else {return o.join('');}";
             
             // create the render fucntion
             _fn = new Function("obj", "blocks", _code);
