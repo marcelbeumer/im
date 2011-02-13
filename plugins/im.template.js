@@ -84,7 +84,7 @@ Todo:
         self.parse = function(templates, tags) {
             if (_options.reparse === true) self.reset();
             init(templates, tags);
-            if (_code) return;
+            if (_code) return self;
             
             // template
             var t = _template + '';
