@@ -62,20 +62,37 @@ Todo:
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
-        self.getCode = function() {
+        self.getParsed = function() {
             return _code;
         };
         
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
+        self.loadParsed = function(code) {
+            _code = code;
+            _fn = new Function("obj", "blocks", _code);
+            return self;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
         self.reset = function() {
+            self.clean();
+            _initialized = false;
+            _code = undefined;
+            _fn = undefined;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.clean = function() {
             _templates = {};
             _tags = {};
             _matcher = {};
             _processor = {};
-            _initialized = false;
-            _code = undefined;
         };
         
         /* ---------------------------------------------------------------------------
@@ -83,8 +100,8 @@ Todo:
         --------------------------------------------------------------------------- */
         self.parse = function(templates, tags) {
             if (_options.reparse === true) self.reset();
+            if (_fn) return self;
             init(templates, tags);
-            if (_code) return self;
             
             // template
             var t = _template + '';
@@ -130,6 +147,9 @@ Todo:
             // create the render fucntion
             _fn = new Function("obj", "blocks", _code);
             
+            // clean up
+            self.clean();
+            
             return self;
         };
         
@@ -161,12 +181,13 @@ Todo:
     text tag
     --------------------------------------------------------------------------- */
     ns.template.tags.text = function(matcher, processor) {
+        
         matcher['%>'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'text';
         };
         
         processor['text'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user txt */ o.push(\'' + chunk.replace(/'/g, "\\'") + '\');');
+            code.push('/* user txt */ o.push(unescape(\'' + escape(chunk) + '\'));');
         };
     };
     
@@ -174,6 +195,7 @@ Todo:
     value tag
     --------------------------------------------------------------------------- */
     ns.template.tags.value = function(matcher, processor) {
+        
         matcher['<%='] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'value';
         };
@@ -187,6 +209,7 @@ Todo:
     code tag
     --------------------------------------------------------------------------- */
     ns.template.tags.code = function(matcher, processor) {
+        
         matcher['<%:'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'code';
         };
@@ -228,6 +251,7 @@ Todo:
     include tag
     --------------------------------------------------------------------------- */
     ns.template.tags.include = function(matcher, processor) {
+        
         matcher['<%include'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'include';
         };
@@ -238,7 +262,7 @@ Todo:
             if (!ft) return;
             
             var fcode = '/* include */ var ' + name + '__include__ = function(obj, blocks){' +
-                ft.parse(templates, tags).getCode() + '};';
+                ft.parse(templates, tags).getParsed() + '};';
             extcode.push(fcode);
             code.push('o.push(' + name + '__include__(obj, blocks));');
         };
@@ -248,6 +272,7 @@ Todo:
     include tag
     --------------------------------------------------------------------------- */
     ns.template.tags.extend = function(matcher, processor) {
+        
         matcher['<%extend'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'extend';
         };
@@ -258,7 +283,7 @@ Todo:
             if (!ft) return;
             
             var fcode = '/* extend ' + name + ' */ var extend = function(obj, blocks){' + 
-                ft.parse(templates, tags).getCode() + '};';
+                ft.parse(templates, tags).getParsed() + '};';
             extcode.push(fcode);
         };
     };

@@ -1,0 +1,15 @@
+<% extend base %>
+
+Try to change 'base' to anything else to 'break' extension.
+This text will not be included in the output when extending...
+
+<% block foo %>
+    <div class="widget <%=active ? 'active' : ''%>">
+    <%: for (var name in people) { %>
+        <div class="person"><%=people[name].email%> is 'here'</div>
+    <%: }%>
+    <% include banner %>
+    </div>
+<% endblock %>
+
+This text will not be included in the output when extending...

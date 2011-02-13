@@ -2,6 +2,7 @@
 <html>
     <head>
         <script src="../../dist/im.js"></script>
+        <script src="../../plugins/im.xhr.js"></script>
         <script src="../../plugins/im.template.js"></script>
         <script src="../../plugins/im.console.js"></script>
         
@@ -12,41 +13,9 @@
         </style>
         <script>
         
-            var banner = '\
-                <div>....banner include...</div>\
-            ';
-
-            var base = '\
-                <div class="wrapper">\
-                    <% block foo %>\
-                        hi there <span>default content</span>\
-                    <% endblock %>\
-                </div>\
-            ';
-        
-            var template = '\
-                <% extend base %>\
-                \
-                Try to change \'base\' to anything else to \'break\' extension.\
-                This text will not be included in the output when extending...\
-                \
-                <% block foo %>\
-                    <div class="widget <%=active ? \'active\' : \'\'%>">\
-                    <%: for (var name in people) { %>\
-                        <div class="person"><%=people[name].email%> is \'here\'</div>\
-                    <%: }%>\
-                    <% include banner %>\
-                    \
-                    <% mytag %>\
-                    <% mytag-builtin %>\
-                    </div>\
-                <% endblock %>\
-                \
-                This text will not be included in the output when extending...\
-            ';
-        
             im(function(){
                 
+                // dummy data
                 var data = {
                     active : true,
                     people : {
@@ -55,39 +24,23 @@
                     }
                 };
                 
-                var templates = {
-                    base : im.template(base, {reparse : true})
-                };
+                // build up templates
+                var templates = {};
                 
-                // add built in template
-                im.template.templates.banner = im.template(banner, {reparse : true});
+                templates.base = im.template(
+                    im.xhr.get('templates/base.html').responseText,
+                    {reparse : false}).parse();
+
+                templates.banner = im.template(
+                    im.xhr.get('templates/banner.html').responseText,
+                    {reparse : false}).parse();
                 
-                var tags = {
-                    mytag : function(matcher, processor) {
-                        matcher['<%mytag'] = function(chunk, mode, code, extcode, templates, tags, options) {
-                            return 'mytag';
-                        };
-                        processor['mytag'] = function(chunk, mode, code, extcode, templates, tags, options) {
-                            processor.text('[output of my custom tag!]', mode, code, extcode, templates, tags);
-                        };
-                    }
-                };
+                var example1 = im.template(im.xhr.get('templates/example1.html').responseText);
                 
-                // add built in tag
-                im.template.tags.mytagBuiltIn = function(matcher, processor) {
-                    matcher['<%mytag-builtin'] = function(chunk, mode, code, extcode, templates, tags, options) {
-                        return 'mytag-builtin';
-                    };
-                    processor['mytag-builtin'] = function(chunk, mode, code, extcode, templates, tags, options) {
-                        processor.text('[output of my built-in custom tag!]', mode, code, extcode, templates, tags);
-                    };
-                };
+                im('body').html(example1.render(data, templates));
                 
-                var tpl = im.template(template);
-                //console.log(tpl.parse(templates, tags).getCode());
-                var html = tpl.render(data, templates, tags);
-                
-                im('body').html(html);
+                //console.info('parsed template:');
+                //console.info(example1.getParsed());
             });
         </script>
     </head>
