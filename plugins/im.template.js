@@ -8,9 +8,9 @@ Supports:
     * Extending ala Django templates
     * Custom tags
     * Overriding anything... :)
-    
+
 Todo:
-    * Proper debugging by analysing generated code in debug mode and rendering in a try-catch
+    * more debugging facilities
 --------------------------------------------------------------------------- */
 (function(ns){
     
@@ -152,7 +152,13 @@ Todo:
             }";
             
             // create the render fucntion
-            _fn = new Function("obj", "blocks", _code);
+            try {
+                _fn = new Function("obj", "blocks", _code);
+            } catch (e) {
+                throw new Error('template.js: could not parse template.\n' + 
+                    '[DEBUG] generated code:\n' + _code + '\n' +
+                    '[DEBUG] original message:\n' + e.message);
+            }
             
             // clean up
             self.clean();
@@ -287,8 +293,14 @@ Todo:
             var ft = templates[name]; // foreign template
             if (!ft) return;
             
-            var fcode = '/* include */ var __' + name + '__include = function(obj, blocks){' +
-                ft.parse(templates, tags).getParsed() + '};';
+            try {
+                var fcode = '/* include */ var __' + name + '__include = function(obj, blocks){' +
+                    ft.parse(templates, tags).getParsed() + '};';
+            } catch (e) {
+                throw new Error('im.template: could not include ' + name + 
+                    ' because of parse error.\n[DEBUG] original message: ' + e.message);
+            }
+            
             extcode.push(fcode);
             code.push('__o.push(__' + name + '__include(obj, blocks));');
         };
@@ -308,8 +320,14 @@ Todo:
             var ft = templates[name]; // foreign template
             if (!ft) return;
             
-            var fcode = '/* extend ' + name + ' */ var __extend = function(obj, blocks){' + 
-                ft.parse(templates, tags).getParsed() + '};';
+            try {
+                var fcode = '/* extend ' + name + ' */ var __extend = function(obj, blocks){' + 
+                    ft.parse(templates, tags).getParsed() + '};';
+            } catch (e) {
+                throw new Error('im.template: could not extend ' + name + 
+                    ' because of parse error.\n[DEBUG] original message: ' + e.message);
+            }
+            
             extcode.push(fcode);
         };
     };
