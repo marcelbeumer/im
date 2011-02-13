@@ -18,7 +18,34 @@ im.template
         var _template = template;
         var _fn;
         var _code;
-        var _library = {};
+        var _matcher;
+        var _processor;
+        var _templates;
+        var _tags;
+        var _initialized;
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        var init = function(templates, tags) {
+            if (_initialized) return;
+            
+            // reset all variables
+            self.reset();
+            
+            // merge objects
+            im.extend(_templates, ns.template.templates);
+            im.extend(_templates, templates || {});
+            im.extend(_tags, ns.template.tags);
+            im.extend(_tags, tags || {});
+            
+            // initialize matcher and processor
+            for (var name in _tags) {
+                _tags[name](_matcher, _processor);
+            }
+            
+            _initialized = true;
+        };
         
         /* ---------------------------------------------------------------------------
         
@@ -30,10 +57,20 @@ im.template
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
-        self.parse = function(library) {
-            
-            // get library
-            var lib = _library = (library || _library);
+        self.reset = function() {
+            _templates = {};
+            _tags = {};
+            _matcher = {};
+            _processor = {};
+            _initialized = false;
+            _code = undefined;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.parse = function(templates, tags) {
+            init(templates, tags);
             
             // template
             var t = _template + '';
@@ -54,60 +91,19 @@ im.template
             var code = []; // store code in array first
             var extcode = []; // external code that should be included first
             var mode = 'text'; // default mode
-            var blockc = 0;
-            var blocks = [];
             
             // process every chunk
             var l = chunks.length;
             for (var x = 0; x < l; x++) {
                 var c = chunks[x];
-                if (c == '<%=') { // value
-                    mode = 'value';
-                } else if (c == '<%:') { // code
-                    mode = 'code';
-                } else if (c == '%>'){  // back to text
-                    mode = 'text';
-                } else if (c == '<%block') {
-                    // TODO
-                    mode = 'block';
-                    blockc++;
-                } else if (c == '<%endblock') {
-                    mode = 'endblock';
-                } else if (c == '<%extend') {
-                    mode = 'extend';
-                } else if (c == '<%include') {
-                    mode = 'include';
-                } else { // process within mode
-                    
-                    if (mode == 'text') {
-                        code.push('/* user txt */ o.push(\'' + c.replace(/'/g, "\\'") + '\');');
-                    } else if (mode == 'value') {
-                        code.push('/* user value */ o.push(' + c + ');');
-                    } else if (mode == 'code') {
-                        code.push('/* user code */' + c);
-                    } else if (mode == 'extend') {
-                        var name = im.trim(c);
-                        var ft = _library[name]; // foreign template
-                        if (!ft) continue;
-                        var fcode = '/* extend ' + name + ' */ var extend = function(obj, blocks){' + 
-                            ft.parse(library).getCode() + '};';
-                        extcode.push(fcode);
-                    } else if (mode == 'include') {
-                        var name = im.trim(c);
-                        var ft = _library[name]; // foreign template
-                        if (!ft) continue;
-                        var fcode = '/* include */ var ' + name + '__include__ = function(obj, blocks){' +
-                            ft.parse(library).getCode() + '};';
-                        extcode.push(fcode);
-                        code.push('o.push(' + name + '__include__(obj, blocks));');
-                    } else if (mode == 'block') {
-                        var name = blocks[blockc] = im.trim(c);
-                        code.push('if (eb[\'' + name + '\']) o.push(eb[\'' + name + '\']);');
-                        code.push('if (!eb[\'' + name + '\']) b[\'' + name + '\'] = (function(){ var o = [];');
-                    } else if (mode == 'endblock') {
-                        var name = blocks[blockc];
-                        code.push('return o.join(\'\');})(); o.push(b[\'' + name +'\']);');
-                    }
+                
+                var match = _matcher[c];
+                if (match) { // first try to find a match on this chunk
+                    var m = match(c, mode, code, extcode, _templates, _tags);
+                    if (m) mode = m; // and set the new mode if we got any
+                } else { // if no match then we should process the chunk
+                    var proc = _processor[mode];
+                    if (proc) proc(c, mode, code, extcode, _templates, _tags);
                 }
             }
             
@@ -126,8 +122,8 @@ im.template
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
-        self.render = function(data, library) {
-            _library = (library || _library);
+        self.render = function(data, templates, tags) {
+            init(templates, tags);
             if (!_fn) self.parse();
             return _fn(data);
         };
@@ -136,6 +132,122 @@ im.template
         
         --------------------------------------------------------------------------- */
         return self;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    ns.template.templates = {};
+    
+    /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    ns.template.tags = {};
+    
+    /* ---------------------------------------------------------------------------
+    text tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.text = function(matcher, processor) {
+        matcher['%>'] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'text';
+        };
+        
+        processor['text'] = function(chunk, mode, code, extcode, templates, tags) {
+            code.push('/* user txt */ o.push(\'' + chunk.replace(/'/g, "\\'") + '\');');
+        };
+    };
+    
+    /* ---------------------------------------------------------------------------
+    value tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.value = function(matcher, processor) {
+        matcher['<%='] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'value';
+        };
+        
+        processor['value'] = function(chunk, mode, code, extcode, templates, tags) {
+            code.push('/* user value */ o.push(' + chunk + ');');
+        };
+    };
+    
+    /* ---------------------------------------------------------------------------
+    code tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.code = function(matcher, processor) {
+        matcher['<%:'] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'code';
+        };
+        
+        processor['code'] = function(chunk, mode, code, extcode, templates, tags) {
+            code.push('/* user code */' + chunk);
+        };
+    };
+
+    /* ---------------------------------------------------------------------------
+    block tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.block = function(matcher, processor) {
+        var blockc = 0;
+        var blocks = [];
+        
+        matcher['<%block'] = function(chunk, mode, code, extcode, templates, tags) {
+            blockc++;
+            return 'block';
+        };
+
+        matcher['<%endblock'] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'endblock';
+        };
+        
+        processor['block'] = function(chunk, mode, code, extcode, templates, tags) {
+            var name = blocks[blockc] = im.trim(chunk);
+            code.push('if (eb[\'' + name + '\']) o.push(eb[\'' + name + '\']);');
+            code.push('if (!eb[\'' + name + '\']) b[\'' + name + '\'] = (function(){ var o = [];');
+        };
+
+        processor['endblock'] = function(chunk, mode, code, extcode, templates, tags) {
+            var name = blocks[blockc];
+            code.push('return o.join(\'\');})(); o.push(b[\'' + name +'\']);');
+        };
+    };
+
+    /* ---------------------------------------------------------------------------
+    include tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.include = function(matcher, processor) {
+        matcher['<%include'] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'include';
+        };
+        
+        processor['include'] = function(chunk, mode, code, extcode, templates, tags) {
+            var name = im.trim(chunk);
+            var ft = templates[name]; // foreign template
+            if (!ft) return;
+            
+            var fcode = '/* include */ var ' + name + '__include__ = function(obj, blocks){' +
+                ft.parse(templates, tags).getCode() + '};';
+            extcode.push(fcode);
+            code.push('o.push(' + name + '__include__(obj, blocks));');
+        };
+    };
+
+    /* ---------------------------------------------------------------------------
+    include tag
+    --------------------------------------------------------------------------- */
+    ns.template.tags.extend = function(matcher, processor) {
+        matcher['<%extend'] = function(chunk, mode, code, extcode, templates, tags) {
+            return 'extend';
+        };
+        
+        processor['extend'] = function(chunk, mode, code, extcode, templates, tags) {
+            var name = im.trim(chunk);
+            var ft = templates[name]; // foreign template
+            if (!ft) return;
+            
+            var fcode = '/* extend ' + name + ' */ var extend = function(obj, blocks){' + 
+                ft.parse(templates, tags).getCode() + '};';
+            extcode.push(fcode);
+        };
     };
     
 })(window.im || window);

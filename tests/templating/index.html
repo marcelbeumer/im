@@ -38,8 +38,6 @@
                     <% include banner %>\
                     \
                     <% mytag %>\
-                    \
-                    <% endmytag %>\
                     </div>\
                 <% endblock %>\
                 \
@@ -56,14 +54,25 @@
                     }
                 };
                 
-                var library = {
+                var templates = {
                     base : im.template(base),
                     banner : im.template(banner)
                 };
                 
+                var tags = {
+                    mytag : function(matcher, processor) {
+                        matcher['<%mytag'] = function(chunk, mode, code, extcode, templates, tags) {
+                            return 'mytag';
+                        };
+                        processor['mytag'] = function(chunk, mode, code, extcode, templates, tags) {
+                            processor.text('[output of my custom tag!]', mode, code, extcode, templates, tags);
+                        };
+                    }
+                };
+                
                 var tpl = im.template(template);
-                //console.log(tpl.parse(library).getCode());
-                var html = tpl.render(data, library);
+                //console.log(tpl.parse(templates, tags).getCode());
+                var html = tpl.render(data, templates, tags);
                 
                 im('body').html(html);
             });
