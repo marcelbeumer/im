@@ -139,10 +139,17 @@ Todo:
             }
             
             // create function code
-            _code = "var o = []; var extend = null; var b = {}; var eb = blocks || {};" + extcode.join('') +
-                "with (obj) { " + 
-                    code.join('') + 
-                "} if (extend) {return extend(obj, b);} else {return o.join('');}";
+            _code = "\
+            var __o = [];var __extend = null;var __b = {};var __eb = blocks || {};\
+            " + extcode.join('') + "\
+            with (obj) { \
+                " + code.join('') + "\
+            }\
+            if (__extend) {\
+                return __extend(obj, __b);\
+            } else {\
+                return __o.join('');\
+            }";
             
             // create the render fucntion
             _fn = new Function("obj", "blocks", _code);
@@ -182,12 +189,31 @@ Todo:
     --------------------------------------------------------------------------- */
     ns.template.tags.text = function(matcher, processor) {
         
+        // escaping / quote code taken from Douglas Crockfords json2.js
+        // https://github.com/douglascrockford/JSON-js/blob/master/json2.js
+        
+        var escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+        var meta = {'\b': '\\b', '\t': '\\t', '\n': '\\n', '\f': '\\f', '\r': '\\r', '"' : '\\"', '\\': '\\\\'};
+        
+        var quote = function(string) {
+            // If the string contains no control characters, no quote characters, and no
+            // backslash characters, then we can safely slap some quotes around it.
+            // Otherwise we must also replace the offending characters with safe escape
+            // sequences.
+            escapable.lastIndex = 0;
+            return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+                var c = meta[a];
+                return typeof c === 'string' ? c :
+                    '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+            }) + '"' : '"' + string + '"';
+        };
+        
         matcher['%>'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'text';
         };
         
         processor['text'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user txt */ o.push(unescape(\'' + escape(chunk) + '\'));');
+            code.push('/* user txt */ __o.push(' + quote(chunk) + ');');
         };
     };
     
@@ -201,7 +227,7 @@ Todo:
         };
         
         processor['value'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user value */ o.push(' + chunk + ');');
+            code.push('/* user value */ __o.push(' + chunk + ');');
         };
     };
     
@@ -237,13 +263,13 @@ Todo:
         
         processor['block'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc] = im.trim(chunk);
-            code.push('if (eb[\'' + name + '\']) o.push(eb[\'' + name + '\']);');
-            code.push('if (!eb[\'' + name + '\']) b[\'' + name + '\'] = (function(){ var o = [];');
+            code.push('if (__eb[\'' + name + '\']) __o.push(__eb[\'' + name + '\']);');
+            code.push('if (!__eb[\'' + name + '\']) __b[\'' + name + '\'] = (function(){ var __o = [];');
         };
 
         processor['endblock'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc];
-            code.push('return o.join(\'\');})(); o.push(b[\'' + name +'\']);');
+            code.push('return __o.join(\'\');})(); __o.push(__b[\'' + name +'\']);');
         };
     };
 
@@ -261,10 +287,10 @@ Todo:
             var ft = templates[name]; // foreign template
             if (!ft) return;
             
-            var fcode = '/* include */ var ' + name + '__include__ = function(obj, blocks){' +
+            var fcode = '/* include */ var __' + name + '__include = function(obj, blocks){' +
                 ft.parse(templates, tags).getParsed() + '};';
             extcode.push(fcode);
-            code.push('o.push(' + name + '__include__(obj, blocks));');
+            code.push('__o.push(__' + name + '__include(obj, blocks));');
         };
     };
 
@@ -282,7 +308,7 @@ Todo:
             var ft = templates[name]; // foreign template
             if (!ft) return;
             
-            var fcode = '/* extend ' + name + ' */ var extend = function(obj, blocks){' + 
+            var fcode = '/* extend ' + name + ' */ var __extend = function(obj, blocks){' + 
                 ft.parse(templates, tags).getParsed() + '};';
             extcode.push(fcode);
         };
