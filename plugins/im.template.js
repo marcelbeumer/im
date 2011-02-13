@@ -1,5 +1,16 @@
 /* ---------------------------------------------------------------------------
 im.template
+
+Supports:
+    * Getting values with {%=value%}
+    * Executing code with {%:alert('x')%}
+    * Includes
+    * Extending ala Django templates
+    * Custom tags
+    * Overriding anything... :)
+    
+Todo:
+    * Proper debugging by analysing generated code in debug mode and rendering in a try-catch
 --------------------------------------------------------------------------- */
 (function(ns){
     
