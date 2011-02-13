@@ -133,7 +133,7 @@ im.dom.js
     };
     
     /* ---------------------------------------------------------------------------
-    chians.removeClass - wraps in.removeClass.
+    chains.removeClass - wraps in.removeClass.
     --------------------------------------------------------------------------- */
     im.chains.removeClass = function(className) {
         for (var x = 0; x < this.length; x++) im.removeClass(this[x], className);
