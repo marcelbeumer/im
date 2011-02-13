@@ -45,7 +45,7 @@ im.template
             t = t.replace(/(<%)\s*?(\S+)/g, '$1$2');
             
             // insert tabs and use them later to split on
-            t = t.replace(/(<%(\s*?(=|:|block|endblock|extend|include))?)/g, '\t$1\t');
+            t = t.replace(/(<%(\s*?(=|:|[a-zA-Z0-9_\-]+))?)/g, '\t$1\t');
             t = t.replace(/(%>)/g, '\t$1\t');
             
             // split into chunks that we can process
