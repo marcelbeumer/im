@@ -213,7 +213,7 @@ Todo:
         };
         
         processor['text'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user txt */ __o.push(' + quote(chunk) + ');');
+            code.push('/* text */ __o.push(' + quote(chunk) + ');');
         };
     };
     
@@ -227,7 +227,7 @@ Todo:
         };
         
         processor['value'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user value */ __o.push(' + chunk + ');');
+            code.push('/* value */ __o.push(' + chunk + ');');
         };
     };
     
@@ -241,7 +241,7 @@ Todo:
         };
         
         processor['code'] = function(chunk, mode, code, extcode, templates, tags, options) {
-            code.push('/* user code */' + chunk);
+            code.push('/* code */' + chunk);
         };
     };
 
@@ -263,13 +263,13 @@ Todo:
         
         processor['block'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc] = im.trim(chunk);
-            code.push('if (__eb[\'' + name + '\']) __o.push(__eb[\'' + name + '\']);');
+            code.push('/* block */ if (__eb[\'' + name + '\']) __o.push(__eb[\'' + name + '\']);');
             code.push('if (!__eb[\'' + name + '\']) __b[\'' + name + '\'] = (function(){ var __o = [];');
         };
 
         processor['endblock'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc];
-            code.push('return __o.join(\'\');})(); __o.push(__b[\'' + name +'\']);');
+            code.push('return __o.join(\'\');})(); __o.push(__b[\'' + name +'\']); /* endblock */');
         };
     };
 
