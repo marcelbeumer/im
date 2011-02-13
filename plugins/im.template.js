@@ -17,7 +17,7 @@ Todo:
     /* ---------------------------------------------------------------------------
     
     --------------------------------------------------------------------------- */
-    ns.template = function(template) {
+    ns.template = function(template, options) {
         /* ---------------------------------------------------------------------------
         
         --------------------------------------------------------------------------- */
@@ -27,6 +27,7 @@ Todo:
         
         --------------------------------------------------------------------------- */
         var _template = template;
+        var _options = options || {};
         var _fn;
         var _code;
         var _matcher;
@@ -81,7 +82,9 @@ Todo:
         
         --------------------------------------------------------------------------- */
         self.parse = function(templates, tags) {
+            if (_options.reparse === true) self.reset();
             init(templates, tags);
+            if (_code) return;
             
             // template
             var t = _template + '';
@@ -110,11 +113,11 @@ Todo:
                 
                 var match = _matcher[c];
                 if (match) { // first try to find a match on this chunk
-                    var m = match(c, mode, code, extcode, _templates, _tags);
+                    var m = match(c, mode, code, extcode, _templates, _tags, _options);
                     if (m) mode = m; // and set the new mode if we got any
                 } else { // if no match then we should process the chunk
                     var proc = _processor[mode];
-                    if (proc) proc(c, mode, code, extcode, _templates, _tags);
+                    if (proc) proc(c, mode, code, extcode, _templates, _tags, _options);
                 }
             }
             
@@ -134,8 +137,7 @@ Todo:
         
         --------------------------------------------------------------------------- */
         self.render = function(data, templates, tags) {
-            init(templates, tags);
-            if (!_fn) self.parse();
+            self.parse(templates, tags);
             return _fn(data);
         };
         
@@ -159,11 +161,11 @@ Todo:
     text tag
     --------------------------------------------------------------------------- */
     ns.template.tags.text = function(matcher, processor) {
-        matcher['%>'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['%>'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'text';
         };
         
-        processor['text'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['text'] = function(chunk, mode, code, extcode, templates, tags, options) {
             code.push('/* user txt */ o.push(\'' + chunk.replace(/'/g, "\\'") + '\');');
         };
     };
@@ -172,11 +174,11 @@ Todo:
     value tag
     --------------------------------------------------------------------------- */
     ns.template.tags.value = function(matcher, processor) {
-        matcher['<%='] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%='] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'value';
         };
         
-        processor['value'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['value'] = function(chunk, mode, code, extcode, templates, tags, options) {
             code.push('/* user value */ o.push(' + chunk + ');');
         };
     };
@@ -185,11 +187,11 @@ Todo:
     code tag
     --------------------------------------------------------------------------- */
     ns.template.tags.code = function(matcher, processor) {
-        matcher['<%:'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%:'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'code';
         };
         
-        processor['code'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['code'] = function(chunk, mode, code, extcode, templates, tags, options) {
             code.push('/* user code */' + chunk);
         };
     };
@@ -201,22 +203,22 @@ Todo:
         var blockc = 0;
         var blocks = [];
         
-        matcher['<%block'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%block'] = function(chunk, mode, code, extcode, templates, tags, options) {
             blockc++;
             return 'block';
         };
 
-        matcher['<%endblock'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%endblock'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'endblock';
         };
         
-        processor['block'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['block'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc] = im.trim(chunk);
             code.push('if (eb[\'' + name + '\']) o.push(eb[\'' + name + '\']);');
             code.push('if (!eb[\'' + name + '\']) b[\'' + name + '\'] = (function(){ var o = [];');
         };
 
-        processor['endblock'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['endblock'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = blocks[blockc];
             code.push('return o.join(\'\');})(); o.push(b[\'' + name +'\']);');
         };
@@ -226,11 +228,11 @@ Todo:
     include tag
     --------------------------------------------------------------------------- */
     ns.template.tags.include = function(matcher, processor) {
-        matcher['<%include'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%include'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'include';
         };
         
-        processor['include'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['include'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = im.trim(chunk);
             var ft = templates[name]; // foreign template
             if (!ft) return;
@@ -246,11 +248,11 @@ Todo:
     include tag
     --------------------------------------------------------------------------- */
     ns.template.tags.extend = function(matcher, processor) {
-        matcher['<%extend'] = function(chunk, mode, code, extcode, templates, tags) {
+        matcher['<%extend'] = function(chunk, mode, code, extcode, templates, tags, options) {
             return 'extend';
         };
         
-        processor['extend'] = function(chunk, mode, code, extcode, templates, tags) {
+        processor['extend'] = function(chunk, mode, code, extcode, templates, tags, options) {
             var name = im.trim(chunk);
             var ft = templates[name]; // foreign template
             if (!ft) return;

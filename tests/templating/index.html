@@ -13,7 +13,7 @@
         <script>
         
             var banner = '\
-                <div>....include...</div>\
+                <div>....banner include...</div>\
             ';
 
             var base = '\
@@ -38,6 +38,7 @@
                     <% include banner %>\
                     \
                     <% mytag %>\
+                    <% mytag-builtin %>\
                     </div>\
                 <% endblock %>\
                 \
@@ -55,19 +56,31 @@
                 };
                 
                 var templates = {
-                    base : im.template(base),
-                    banner : im.template(banner)
+                    base : im.template(base, {reparse : true})
                 };
+                
+                // add built in template
+                im.template.templates.banner = im.template(banner, {reparse : true});
                 
                 var tags = {
                     mytag : function(matcher, processor) {
-                        matcher['<%mytag'] = function(chunk, mode, code, extcode, templates, tags) {
+                        matcher['<%mytag'] = function(chunk, mode, code, extcode, templates, tags, options) {
                             return 'mytag';
                         };
-                        processor['mytag'] = function(chunk, mode, code, extcode, templates, tags) {
+                        processor['mytag'] = function(chunk, mode, code, extcode, templates, tags, options) {
                             processor.text('[output of my custom tag!]', mode, code, extcode, templates, tags);
                         };
                     }
+                };
+                
+                // add built in tag
+                im.template.tags.mytagBuiltIn = function(matcher, processor) {
+                    matcher['<%mytag-builtin'] = function(chunk, mode, code, extcode, templates, tags, options) {
+                        return 'mytag-builtin';
+                    };
+                    processor['mytag-builtin'] = function(chunk, mode, code, extcode, templates, tags, options) {
+                        processor.text('[output of my built-in custom tag!]', mode, code, extcode, templates, tags);
+                    };
                 };
                 
                 var tpl = im.template(template);
