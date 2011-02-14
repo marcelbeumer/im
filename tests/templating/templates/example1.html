@@ -8,7 +8,8 @@ This text will not be included in the output when extending...
     <%: for (var name in people) { %>
         <div class="person"><%=people[name].email%> is 'here'</div>
     <%: }%>
-    <% include banner %>// / ' ! /dsad/ \\ "
+    <% include banner %>
+    <%=$trim('  xx  x') + $isString('x')%>
     </div>
 <% endblock %>
 

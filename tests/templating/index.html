@@ -15,6 +15,9 @@
         
             im(function(){
                 
+                // get clean templating environment
+                var tpl = im.template.env();
+                
                 // dummy data
                 var data = {
                     active : true,
@@ -27,15 +30,15 @@
                 // build up templates
                 var templates = {};
                 
-                templates.base = im.template(
+                templates.base = im.template.create(
                     im.xhr.get('templates/base.html').responseText,
                     {reparse : false});
-
-                templates.banner = im.template(
+                    
+                templates.banner = im.template.create(
                     im.xhr.get('templates/banner.html').responseText,
                     {reparse : false});
                 
-                var example1 = im.template(im.xhr.get('templates/example1.html').responseText);
+                var example1 = im.template.create(im.xhr.get('templates/example1.html').responseText);
                 
                 im('body').html(example1.render(data, templates));
                 
