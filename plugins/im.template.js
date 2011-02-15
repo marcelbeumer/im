@@ -6,14 +6,13 @@ Supports:
     * Executing code with {%:alert('x')%}
     * Includes
     * Extending ala Django templates
-    * Custom modules
+    * Loading custom modules
+    * Setting default modules
+    * Cloning into a fresh clean environment
     * Overriding anything... :)
 
 Todo:
-    * find a way to deal with module loading (<% load %> ala Django?)
-    * be able to set default modules
     * find a way to deal with template library loading and such...
-    * more debugging facilities
 --------------------------------------------------------------------------- */
 (function(ns){
     
@@ -38,14 +37,11 @@ Todo:
         --------------------------------------------------------------------------- */
         var _template = template;
         var _options = options || {};
-        var _fn;
-        var _code;
-        var _matcher;
-        var _processor;
-        var _templates;
-        var _modules;
-        var _helpers;
-        var _initialized;
+        var _fn, _code, 
+            _matcher, _processor, 
+            _templates, _modules, 
+            _helpers, 
+            _initialized;
         
         /* ---------------------------------------------------------------------------
         
@@ -62,14 +58,40 @@ Todo:
             im.extend(_modules, ns.template.modules);
             im.extend(_modules, modules || {});
             
-            // initialize matcher and processor
+            // initialize parser & standard helpers
             var defaults = ns.template.defaults.modules;
             for (var x = 0; x < defaults.length; x++) {
                 var mod = _modules[defaults[x]];
-                if (mod) mod(_matcher, _processor, _helpers);
+                if (mod) {
+                    if (mod.parser) mod.parser(_matcher, _processor, _modules, _options);
+                    if (mod.helpers) mod.helpers(_helpers, _modules, _options);
+                }
             }
             
             _initialized = true;
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        var createFn = function(code) {
+            try {
+                return new Function("obj", "blocks", "helpers", "modules", "state", code);
+            } catch (e) {
+                throw new Error('template.js: could not parse template.\n' + 
+                    '[DEBUG] generated code:\n' + code + '\n' +
+                    '[DEBUG] original message:\n' + e.message);
+            }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        self.loadParsed = function(code, templates, modules) {
+            self.reset();
+            init(templates, modules);
+            _code = code;
+            _fn = createFn(code);
         };
         
         /* ---------------------------------------------------------------------------
@@ -86,6 +108,7 @@ Todo:
             self.clean();
             _initialized = false;
             _helpers = {};
+            _modules = {};
             _code = undefined;
             _fn = undefined;
         };
@@ -95,7 +118,6 @@ Todo:
         --------------------------------------------------------------------------- */
         self.clean = function() {
             _templates = {};
-            _modules = {};
             _matcher = {};
             _processor = {};
         };
@@ -111,61 +133,72 @@ Todo:
             // template
             var t = _template + '';
             
-            // remove tabs, newlines
-            t = t.replace(/[\t\r\n]/g, '');
+            // remove \r so we can do something with it later
+            t = t.replace(/[\r]/g, '');
             
             // remove whitespace from template instructions
             t = t.replace(/(<%)\s*?(\S+)/g, '$1$2');
             
-            // insert tabs and use them later to split on
-            t = t.replace(/(<%(\s*?(=|:|[a-zA-Z0-9_\-]+))?)/g, '\t$1\t');
-            t = t.replace(/(%>)/g, '\t$1\t');
+            // insert \r and use them later to split on
+            t = t.replace(/(<%(\s*?(=|:|[a-zA-Z0-9_\-]+))?)/g, '\r$1\r');
+            t = t.replace(/(%>)/g, '\r$1\r');
             
             // split into chunks that we can process
-            var chunks = t.split('\t');
+            var chunks = t.split('\r');
             
-            var code = []; // store code in array first
-            var extcode = []; // external code that should be included first
-            var mode = 'text'; // default mode
+            // create parser object
+            var parser = {
+                code : [], // code that runs within the template
+                extcode : [], // code that should be included as 'external' code
+                mode : 'text', // current mode
+                chunk : undefined, // current chunk being processed
+                templates : _templates,
+                modules : _modules,
+                options : _options
+            };
             
             // process every chunk
             var l = chunks.length;
             for (var x = 0; x < l; x++) {
-                var c = chunks[x];
                 
-                var match = _matcher[c];
-                if (match) { // first try to find a match on this chunk
-                    var m = match(c, mode, code, extcode, _templates, _modules, _options);
-                    if (m) mode = m; // and set the new mode if we got any
-                } else { // if no match then we should process the chunk
-                    var proc = _processor[mode];
-                    if (proc) proc(c, mode, code, extcode, _templates, _modules, _options);
+                // get chunk
+                var c = chunks[x];
+                if (!c) continue;
+                
+                // set chunk
+                parser.chunk = c;
+                
+                // first try to find a match on this chunk
+                var match = _matcher[parser.chunk];
+                
+                if (match) { // if match, execute it
+                    var m = match(parser);
+                    if (m) parser.mode = m; // and set the new mode if we got any
+                    
+                } else { // if no match then we should process the chunk in the current mode
+                    var proc = _processor[parser.mode];
+                    if (proc) proc(parser);
                 }
             }
             
             // create function code
             _code = "\
-            var __helpers = helpers || {}; var __o = [];var __extend = null;var __b = {};var __eb = blocks || {};\
-            " + extcode.join('') + "\
-            with(__helpers){\
+            var __modules = modules, __state = state, __helpers = helpers, \
+            __o = [], __extend = null, __b = {}, __eb = blocks;\
+            " + parser.extcode.join('') + "\
+            with (__helpers) {\
                 with (obj) { \
-                    " + code.join('') + "\
+                    " + parser.code.join('') + "\
                 }\
             }\
             if (__extend) {\
-                return __extend(obj, __b, __helpers);\
+                return __extend(obj, __b, __helpers, __modules, __state);\
             } else {\
                 return __o.join('');\
             }";
             
-            // create the render fucntion
-            try {
-                _fn = new Function("obj", "blocks", "helpers", _code);
-            } catch (e) {
-                throw new Error('template.js: could not parse template.\n' + 
-                    '[DEBUG] generated code:\n' + _code + '\n' +
-                    '[DEBUG] original message:\n' + e.message);
-            }
+            // create the render function
+            _fn = createFn(_code);
             
             // clean up
             self.clean();
@@ -178,7 +211,7 @@ Todo:
         --------------------------------------------------------------------------- */
         self.render = function(data, templates, modules) {
             self.parse(templates, modules);
-            return _fn(data, null, _helpers);
+            return _fn(data, {}, _helpers, _modules, {});
         };
         
         /* ---------------------------------------------------------------------------
@@ -204,9 +237,68 @@ Todo:
     ns.template.modules = {};
     
     /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    ns.template.modules.load = (function(){
+        var self = {};
+        
+        var _unknownMessage = function(name) {
+            return 'im.template: module ' + name + ' is unknown.';
+        };
+        
+        self.helpers = function(helpers, modules, options) {
+            /* ---------------------------------------------------------------------------
+            used internally only
+            --------------------------------------------------------------------------- */
+            helpers.$__load = function(name, state) {
+                var s = state.loaded = state.loaded || {};
+                if (s[name]) return;
+                var mod = modules[name];
+                if (!mod) throw new Error(_unknownMessage(name));
+                try {
+                    if (mod.helpers) mod.helpers(helpers, modules, options);
+                } catch (e) {
+                    throw new Error('im.template could not load module ' + name + 
+                        ' because of error. [DEBUG] original message: ' + e.message);
+                }
+                
+                s[name] = true;
+            };
+        };
+        
+        self.parser = function(matcher, processor, modules, options) {
+            matcher['<%load'] = function(parser) {
+                return 'load';
+            };
+            
+            processor['load'] = function(p) {
+                var mods = p.chunk.split(/[,\s]/);
+
+                var l = mods.length;
+                while (l--) {
+                    var n = mods[l];
+                    if (!n || n == ',') continue;
+                    
+                    if (p.modules[n]) {
+                        p.code.push('$__load("' + n + '", __state);');
+                    } else {
+                        throw new Error(_unknownMessage(n));
+                    }
+                }
+            };
+        };
+        
+        return self;
+    })();
+    
+    // add as default module
+    ns.template.defaults.modules.push('load');
+    
+    /* ---------------------------------------------------------------------------
     text tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.text = function(matcher, processor, helpers) {
+    ns.template.modules.text = (function(){
+        var self = {};
         
         // escaping / quote code taken from Douglas Crockfords json2.js
         // https://github.com/douglascrockford/JSON-js/blob/master/json2.js
@@ -227,26 +319,23 @@ Todo:
             }) + '"' : '"' + string + '"';
         };
         
-        /* ---------------------------------------------------------------------------
-        
-        --------------------------------------------------------------------------- */
-        helpers.$trim = im.trim;
-        helpers.$isString = im.isString;
-        
-        /* ---------------------------------------------------------------------------
-        
-        --------------------------------------------------------------------------- */
-        matcher['%>'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            return 'text';
+        self.helpers = function(helpers, modules, options) {
+            helpers.$trim = im.trim;
+            helpers.$isString = im.isString;
         };
         
-        /* ---------------------------------------------------------------------------
-        
-        --------------------------------------------------------------------------- */
-        processor['text'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            code.push('/* text */ __o.push(' + quote(chunk) + ');');
+        self.parser = function(matcher, processor, modules, options) {
+            matcher['%>'] = function(p) {
+                return 'text';
+            };
+
+            processor['text'] = function(p) {
+                p.code.push('__o.push(' + quote(p.chunk) + ');');
+            };
         };
-    };
+        
+        return self;
+    })();
     
     // add as default module
     ns.template.defaults.modules.push('text');
@@ -254,14 +343,14 @@ Todo:
     /* ---------------------------------------------------------------------------
     value tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.value = function(matcher, processor, helpers) {
-        
-        matcher['<%='] = function(chunk, mode, code, extcode, templates, modules, options) {
+    ns.template.modules.value = {};
+    ns.template.modules.value.parser = function(matcher, processor, modules, options) {
+        matcher['<%='] = function(p) {
             return 'value';
         };
-        
-        processor['value'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            code.push('/* value */ __o.push(' + chunk + ');');
+
+        processor['value'] = function(p) {
+            p.code.push('__o.push(' + p.chunk + ');');
         };
     };
     
@@ -271,14 +360,14 @@ Todo:
     /* ---------------------------------------------------------------------------
     code tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.code = function(matcher, processor, helpers) {
-        
-        matcher['<%:'] = function(chunk, mode, code, extcode, templates, modules, options) {
+    ns.template.modules.code = {};
+    ns.template.modules.code.parser = function(matcher, processor, modules, options) {
+        matcher['<%:'] = function(p) {
             return 'code';
         };
-        
-        processor['code'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            code.push('/* code */' + chunk);
+
+        processor['code'] = function(p) {
+            p.code.push(p.chunk);
         };
     };
     
@@ -288,28 +377,31 @@ Todo:
     /* ---------------------------------------------------------------------------
     block tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.block = function(matcher, processor, helpers) {
+    ns.template.modules.block = {};
+    ns.template.modules.block.parser = function(matcher, processor, modules, options) {
         var blockc = 0;
         var blocks = [];
         
-        matcher['<%block'] = function(chunk, mode, code, extcode, templates, modules, options) {
+        matcher['<%block'] = function(p) {
             blockc++;
             return 'block';
         };
 
-        matcher['<%endblock'] = function(chunk, mode, code, extcode, templates, modules, options) {
+        matcher['<%endblock'] = function(p) {
             return 'endblock';
         };
-        
-        processor['block'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            var name = blocks[blockc] = im.trim(chunk);
-            code.push('/* block */ if (__eb[\'' + name + '\']) __o.push(__eb[\'' + name + '\']);');
-            code.push('if (!__eb[\'' + name + '\']) __b[\'' + name + '\'] = (function(){ var __o = [];');
+
+        processor['block'] = function(p) {
+            var name = blocks[blockc] = im.trim(p.chunk);
+            p.code.push('if (__eb[\'' + name + '\'] !== undefined) __o.push(__eb[\'' + name + '\']);');
+            p.code.push('if (__eb[\'' + name + '\'] === undefined) __b[\'' + name + 
+                '\'] = (function(){ var __o = [];');
         };
 
-        processor['endblock'] = function(chunk, mode, code, extcode, templates, modules, options) {
+        processor['endblock'] = function(p) {
             var name = blocks[blockc];
-            code.push('return __o.join(\'\');})(); __o.push(__b[\'' + name +'\']); /* endblock */');
+            p.code.push('return __o.join(\'\');})(); if (__b[\'' + name + '\'] !== undefined) __o.push(__b[\'' + 
+                name +'\']); /* endblock */');
         };
     };
     
@@ -319,27 +411,30 @@ Todo:
     /* ---------------------------------------------------------------------------
     include tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.include = function(matcher, processor, helpers) {
+    ns.template.modules.include = {};
+    ns.template.modules.include.parser = function(matcher, processor, modules, options) {
         
-        matcher['<%include'] = function(chunk, mode, code, extcode, templates, modules, options) {
+        matcher['<%include'] = function(p) {
             return 'include';
         };
-        
-        processor['include'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            var name = im.trim(chunk);
-            var ft = templates[name]; // foreign template
-            if (!ft) return;
-            
+
+        processor['include'] = function(p) {
+            var name = im.trim(p.chunk);
+            var ft = p.templates[name]; // foreign template
+            if (!ft) throw new Error("im.template: could not include " + name + 
+                ' because template is unknown.');
+
             try {
-                var fcode = '/* include */ var __' + name + '__include = function(obj, blocks){' +
-                    ft.parse(templates, modules).getParsed() + '};';
+                var fcode = 'var __' + name + '__include = function(obj, blocks){' +
+                    ft.parse(p.templates, modules).getParsed() + '};';
             } catch (e) {
                 throw new Error('im.template: could not include ' + name + 
                     ' because of parse error.\n[DEBUG] original message: ' + e.message);
             }
-            
-            extcode.push(fcode);
-            code.push('__o.push(__' + name + '__include(obj, blocks));');
+
+            p.extcode.push(fcode);
+            p.code.push('__o.push(__' + name + 
+                '__include(obj, {}, __helpers, __modules, __state));');
         };
     };
     
@@ -349,26 +444,35 @@ Todo:
     /* ---------------------------------------------------------------------------
     include tag
     --------------------------------------------------------------------------- */
-    ns.template.modules.extend = function(matcher, processor, helpers) {
+    ns.template.modules.extend = {};
+    ns.template.modules.extend.parser = function(matcher, processor, modules, options) {
+            
+        var c = 0;
         
-        matcher['<%extend'] = function(chunk, mode, code, extcode, templates, modules, options) {
+        matcher['<%extend'] = function(p) {
             return 'extend';
         };
-        
-        processor['extend'] = function(chunk, mode, code, extcode, templates, modules, options) {
-            var name = im.trim(chunk);
-            var ft = templates[name]; // foreign template
-            if (!ft) return;
+
+        processor['extend'] = function(p) {
+            var name = im.trim(p.chunk);
+            
+            c = c + 1;
+            if (c > 1) throw new Error("im.template: could not extend " + name + 
+                " because the template already extends another template.");
+            
+            var ft = p.templates[name]; // foreign template
+            if (!ft) throw new Error("im.template: could not extend " + name + 
+                " because the template is unknown.");
             
             try {
-                var fcode = '/* extend ' + name + ' */ var __extend = function(obj, blocks){' + 
-                    ft.parse(templates, modules).getParsed() + '};';
+                var fcode = 'var __extend = function(obj, blocks, helpers, modules, state){' + 
+                    ft.parse(p.templates, modules).getParsed() + '};';
             } catch (e) {
                 throw new Error('im.template: could not extend ' + name + 
                     ' because of parse error.\n[DEBUG] original message: ' + e.message);
             }
             
-            extcode.push(fcode);
+            p.extcode.push(fcode);
         };
     };
     
