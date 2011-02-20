@@ -37,7 +37,7 @@ Todo:
         --------------------------------------------------------------------------- */
         var _template = template;
         var _options = options || {};
-        var _fn, _code, 
+        var _fn, _code, _mycode,
             _matcher, _processor, 
             _templates, _modules, 
             _helpers, 
@@ -56,6 +56,7 @@ Todo:
             im.extend(_templates, ns.template.templates);
             im.extend(_templates, templates || {});
             im.extend(_modules, ns.template.modules);
+            
             im.extend(_modules, modules || {});
             
             // initialize parser & standard helpers
@@ -78,10 +79,34 @@ Todo:
             try {
                 return new Function("obj", "blocks", "helpers", "modules", "state", code);
             } catch (e) {
+                alert(code.split('\n')[e.line - 1]);
                 throw new Error('template.js: could not parse template.\n' + 
                     '[DEBUG] generated code:\n' + code + '\n' +
                     '[DEBUG] original message:\n' + e.message);
             }
+        };
+        
+        /* ---------------------------------------------------------------------------
+        
+        --------------------------------------------------------------------------- */
+        var get_chunks = function(template) {
+            
+            var t = template + '';
+            
+            // remove \r so we can do something with it later
+            t = t.replace(/[\r]/g, '');
+            
+            // remove whitespace from template instructions
+            t = t.replace(/(<%)\s*?(\S+)/g, '$1$2');
+            
+            // insert \r and use them later to split on
+            t = t.replace(/(<%(\s*?(=|:|[a-zA-Z0-9_\-]+))?)/g, '\r$1\r');
+            t = t.replace(/(%>)/g, '\r$1\r');
+            
+            // split into chunks that we can process
+            var chunks = t.split('\r');
+            
+            return chunks;
         };
         
         /* ---------------------------------------------------------------------------
@@ -130,21 +155,7 @@ Todo:
             if (_fn) return self;
             init(templates, modules);
             
-            // template
-            var t = _template + '';
-            
-            // remove \r so we can do something with it later
-            t = t.replace(/[\r]/g, '');
-            
-            // remove whitespace from template instructions
-            t = t.replace(/(<%)\s*?(\S+)/g, '$1$2');
-            
-            // insert \r and use them later to split on
-            t = t.replace(/(<%(\s*?(=|:|[a-zA-Z0-9_\-]+))?)/g, '\r$1\r');
-            t = t.replace(/(%>)/g, '\r$1\r');
-            
-            // split into chunks that we can process
-            var chunks = t.split('\r');
+            var chunks = get_chunks(_template);
             
             // create parser object
             var parser = {
@@ -152,17 +163,21 @@ Todo:
                 extcode : [], // code that should be included as 'external' code
                 mode : 'text', // current mode
                 chunk : undefined, // current chunk being processed
+                chunkc : 0, // index of current chunk being processed
+                chunks : chunks,
                 templates : _templates,
                 modules : _modules,
-                options : _options
+                options : _options,
+                processor : _processor,
+                matcher : _matcher,
+                get_chunks : get_chunks
             };
             
             // process every chunk
-            var l = chunks.length;
-            for (var x = 0; x < l; x++) {
+            for (parser.chunkc = 0; parser.chunkc < chunks.length; parser.chunkc++) {
                 
                 // get chunk
-                var c = chunks[x];
+                var c = chunks[parser.chunkc];
                 if (!c) continue;
                 
                 // set chunk
@@ -181,14 +196,15 @@ Todo:
                 }
             }
             
+            _mycode = parser.code.join('');
+            
             // create function code
             _code = "\
-            var __modules = modules, __state = state, __helpers = helpers, \
-            __o = [], __extend = null, __b = {}, __eb = blocks;\
+            var __modules = modules, __state = state, __helpers = helpers, __o = [], __extend = null, __b = {}, __eb = blocks;\
             " + parser.extcode.join('') + "\
             with (__helpers) {\
                 with (obj) { \
-                    " + parser.code.join('') + "\
+                    " + _mycode + "\
                 }\
             }\
             if (__extend) {\
@@ -196,6 +212,8 @@ Todo:
             } else {\
                 return __o.join('');\
             }";
+            
+            _code = _code.replace(/([\{;])/g, '$1\n');
             
             // create the render function
             _fn = createFn(_code);
@@ -211,7 +229,15 @@ Todo:
         --------------------------------------------------------------------------- */
         self.render = function(data, templates, modules) {
             self.parse(templates, modules);
-            return _fn(data, {}, _helpers, _modules, {});
+            //self.validate();
+            try {
+                return _fn(data, {}, _helpers, _modules, {});
+            } catch (e) {
+                console.dir(e);
+                throw new Error("im.template: could not render template. " + 
+                    "[DEBUG] original message: " + e.message);
+            }
+            
         };
         
         /* ---------------------------------------------------------------------------
@@ -393,15 +419,15 @@ Todo:
 
         processor['block'] = function(p) {
             var name = blocks[blockc] = im.trim(p.chunk);
-            p.code.push('if (__eb[\'' + name + '\'] !== undefined) __o.push(__eb[\'' + name + '\']);');
-            p.code.push('if (__eb[\'' + name + '\'] === undefined) __b[\'' + name + 
+            p.code.push('if (__eb[\'' + name + '\'] !== undefined){__o.push(__eb[\'' + name + '\']);}');
+            p.code.push('if (__eb[\'' + name + '\'] === undefined){__b[\'' + name + 
                 '\'] = (function(){ var __o = [];');
         };
 
         processor['endblock'] = function(p) {
             var name = blocks[blockc];
-            p.code.push('return __o.join(\'\');})(); if (__b[\'' + name + '\'] !== undefined) __o.push(__b[\'' + 
-                name +'\']); /* endblock */');
+            p.code.push('return __o.join(\'\');})();} if (__b[\'' + name + '\'] !== undefined) {__o.push(__b[\'' + 
+                name +'\']);} /* endblock */');
         };
     };
     
@@ -465,7 +491,7 @@ Todo:
                 " because the template is unknown.");
             
             try {
-                var fcode = 'var __extend = function(obj, blocks, helpers, modules, state){' + 
+                var fcode = '__extend = function(obj, blocks, helpers, modules, state){' + 
                     ft.parse(p.templates, modules).getParsed() + '};';
             } catch (e) {
                 throw new Error('im.template: could not extend ' + name + 
@@ -478,5 +504,69 @@ Todo:
     
     // add as default module
     ns.template.defaults.modules.push('extend');
+    
+    ns.template.modules.i18n = {};
+    ns.template.modules.i18n.parser = function(matcher, processor, modules, options) {
+        
+        var blockc = 0,
+            blocks = [],
+            dict_nl = {
+                "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo<%='XXXXX'%>" : "haha leuk ja <%='XXXXX'%>, nee echt."
+            };
+        
+        matcher['<%blocktrans'] = function(p) {
+            return 'blocktrans';
+        };
+        
+        processor['blocktrans'] = function(p) {
+            var locale = options.locale,
+                end,
+                start = p.chunkc,
+                start_content,
+                end_content,
+                chunks = p.chunks;
+                
+            for (var x = start; x < chunks.length; x++) {
+                var chunk = chunks[x];
+                if (chunk == '%>' && end_content === undefined && start_content === undefined) start_content = x + 1;
+                if (chunk == '<%blocktrans') throw new Error('no nested blocktrans allowed');
+                if (chunk == '<%endblocktrans') {;
+                    end_content = x - 1;
+                }
+                if (chunk == '%>' && end_content !== undefined) {
+                    end = x + 1;
+                    break;
+                }
+            }
+            
+            var content = chunks.slice(start_content, end_content);
+            var key = im.trim(content.join(''));
+            var trans = dict_nl[key];
+            if (trans) {
+                // parse trans, with current modules, templates, and options
+                var inject = ['', '', '', '', '%>'].concat(p.get_chunks(trans));
+                // inject chunks
+                var before = chunks.slice(0, start-1);
+                var after = chunks.slice(end, chunks.length);
+                
+                //console.dir(before);
+                //console.dir(after);
+                
+                //alert(before.join('') + after.join(''))
+                
+                chunks.splice(0, chunks.length);
+                var new_chunks = [].concat(before, inject, after);
+                var l = new_chunks.length;
+                for (var x = 0; x < l; x++) {
+                    chunks[x] = new_chunks[x];
+                }
+                
+                //alert(chunks.length);
+            }
+        };
+        
+    };
+    
+    ns.template.defaults.modules.push('i18n');
     
 })(window.im || window);
