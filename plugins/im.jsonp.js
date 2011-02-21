@@ -71,6 +71,7 @@
         // abort request on max time
         if (maxTime) {
             window.setTimeout(function(){
+                if (done) return;
                 handler.abort();
                 if (errorCallback) errorCallback();
             }, maxTime);
