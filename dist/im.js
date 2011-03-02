@@ -5,7 +5,7 @@ im.core.js
 ------------------------------------------------------- */
 (function(ns){
     // ---------------------------------------------------------------------------
-    var VERSION = "post-1.2.1-dev";
+    var VERSION = "1.2.2";
     
     /* 
     keep reference to ns.im in case there was already something referenced
