@@ -133,7 +133,7 @@ im.dom.js
     };
     
     /* ---------------------------------------------------------------------------
-    chians.removeClass - wraps in.removeClass.
+    chains.removeClass - wraps in.removeClass.
     --------------------------------------------------------------------------- */
     im.chains.removeClass = function(className) {
         for (var x = 0; x < this.length; x++) im.removeClass(this[x], className);
@@ -368,7 +368,7 @@ im.dom.js
     Note that the html string will be trimmed.
     --------------------------------------------------------------------------- */
     im.create = function(html) {
-        var div = document.createElement('div');
+        var div = im.__doc.createElement('div');
         div.innerHTML = im.trim(html);
         return div.firstChild;
     };

@@ -1,6 +1,7 @@
 <!DOCTYPE "html">
 <html>
     <head>
+        <script src="jshint.js"></script>
         <script src="../../dist/im.js"></script>
         <script src="../../plugins/im.xhr.js"></script>
         <script src="../../plugins/im.template.js"></script>
@@ -59,8 +60,8 @@
                 im('body').html(result);
                 //im('#v').el(0).value = result;
                 
-                console.info('parsed template:');
-                console.info(example1.getParsed());
+                //console.info('parsed template:');
+                //console.info(example1.getParsed());
 
                 console.info('rendered in ' + (d2 - d1) + 'ms');
             });

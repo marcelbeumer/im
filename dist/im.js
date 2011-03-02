@@ -53,6 +53,16 @@ im.core.js
     })();
     
     /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    im.setWindow = function(windowObj) {
+        im.__win = windowObj;
+        im.__doc = windowObj.document;
+    };
+    
+    im.setWindow(window);
+    
+    /* ---------------------------------------------------------------------------
     im.isFunction - safe isFunction
     --------------------------------------------------------------------------- */
     im.isFunction = function(obj) {
@@ -425,7 +435,7 @@ im.dom.js
     };
     
     /* ---------------------------------------------------------------------------
-    chians.removeClass - wraps in.removeClass.
+    chains.removeClass - wraps in.removeClass.
     --------------------------------------------------------------------------- */
     im.chains.removeClass = function(className) {
         for (var x = 0; x < this.length; x++) im.removeClass(this[x], className);
@@ -660,7 +670,7 @@ im.dom.js
     Note that the html string will be trimmed.
     --------------------------------------------------------------------------- */
     im.create = function(html) {
-        var div = document.createElement('div');
+        var div = im.__doc.createElement('div');
         div.innerHTML = im.trim(html);
         return div.firstChild;
     };
@@ -1021,7 +1031,8 @@ im.events.js
     };
     
     /* ---------------------------------------------------------------------------
-    uniqueEventTypeFactory - 
+    uniqueEventTypeFactory - simple boiler plate for unique one time events such
+    as onready and onload (or any custom one).
     --------------------------------------------------------------------------- */
     var uniqueEventTypeFactory = function(impl) {
         
@@ -1121,7 +1132,7 @@ im.events.js
             // when can only do this trick when we are toplevel.
             if (toplevel) (function(){
                 try {
-                    document.documentElement.doScroll("left");
+                    im.__doc.documentElement.doScroll("left");
                 } catch(e) {
                     setTimeout(arguments.callee, 0);
                     return;
@@ -1140,31 +1151,31 @@ im.events.js
         for some browsers. Also, bind to onload to be sure.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (document.addEventListener) {
+            if (im.__doc.addEventListener) {
                 // the proper way
                 _callback = callback;
-                document.addEventListener("DOMContentLoaded", _callback, false);
+                im.__doc.addEventListener("DOMContentLoaded", _callback, false);
                 
-            } else if (window.attachEvent) {
+            } else if (im.__win.attachEvent) {
                 // might be late
-                _callback = function(){if (document.readyState === "complete") callback();};
-                document.attachEvent("onreadystatechange", _callback);
+                _callback = function(){if (im.__doc.readyState === "complete") callback();};
+                im.__doc.attachEvent("onreadystatechange", _callback);
                 // should work
                 if (im.browser.msie) explorerScrollCheck(callback);
             }
             
             // always safe
-            im.bind(window, 'load', callback);
+            im.bind(im.__win, 'load', callback);
         };
         
         /* ---------------------------------------------------------------------------
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (document.removeEventListener) {
-                document.removeEventListener("DOMContentLoaded", _callback, false);
-            } else if (window.detachEvent) {
-                document.detachEvent("onreadystatechange", _callback);
+            if (im.__doc.removeEventListener) {
+                im.__doc.removeEventListener("DOMContentLoaded", _callback, false);
+            } else if (im.__win.detachEvent) {
+                im.__doc.detachEvent("onreadystatechange", _callback);
             }
         };
         
@@ -1189,17 +1200,17 @@ im.events.js
         impl.validateElement - will only bind this event to the window object
         --------------------------------------------------------------------------- */
         impl.validateElement = function(element) {
-            return element === window;
+            return element === im.__win;
         };
         
         /* ---------------------------------------------------------------------------
         impl.bindRealEvent - bind the actual browser event.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (window.addEventListener) {
-                window.addEventListener("load", callback, false);
-            } else if (window.attachEvent) {
-                window.attachEvent("onload", callback);
+            if (im.__win.addEventListener) {
+                im.__win.addEventListener("load", callback, false);
+            } else if (im.__win.attachEvent) {
+                im.__win.attachEvent("onload", callback);
             }
         };
         
@@ -1207,10 +1218,10 @@ im.events.js
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (document.removeEventListener) {
-                document.removeEventListener("load", callback, false);
-            } else if (window.detachEvent) {
-                document.detachEvent("onload", callback);
+            if (im.__doc.removeEventListener) {
+                im.__doc.removeEventListener("load", callback, false);
+            } else if (im.__win.detachEvent) {
+                im.__doc.detachEvent("onload", callback);
             }
         };
         
@@ -1231,14 +1242,14 @@ im.events.js
     im.onready - binds onready event handler to document
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
-        im.bind(document, 'ready', handler);
+        im.bind(im.__doc, 'ready', handler);
     };
     
     /* ---------------------------------------------------------------------------
     im.onload - bind event handler on the onload event of the window.
     --------------------------------------------------------------------------- */
     im.onload = function(handler) {
-        im.bind(window, 'load', handler);
+        im.bind(im.__win, 'load', handler);
     };
     
 })(window.im);
@@ -1316,7 +1327,10 @@ animation code based on http://github.com/madrobby/emile.
     --------------------------------------------------------------------------- */
     im.css = function(element, nameOrObject) {
         if (im.isString(nameOrObject)) {
-            var c = element.currentStyle ? element.currentStyle : getComputedStyle(element, null);
+            
+            var c = element.currentStyle !== undefined ? element.currentStyle : getComputedStyle(element, null);
+            if (!c) return; // return undefined when we can't find any style (most likely node outside the DOM)
+            
             if (im.browser.msie && nameOrObject == "opacity") {
                 var match = (element.currentStyle.filter + '').match(/alpha\(opacity=(\d+)/);
                 return ((match && match.length > 1) ? (parseInt(match[1], 10) / 100) : 1) + '';
@@ -1327,13 +1341,21 @@ animation code based on http://github.com/madrobby/emile.
             for (var n in nameOrObject) {
                 var s = element.style;
                 if (im.browser.msie && n == 'opacity') {
-                    if (!element.currentStyle.hasLayout) s.zoom = 1;
+                    
+                    /* 
+                    We set zoom when no hasLayout, or when the node doesn't have style yet,
+                    which could happen when we are setting properties on a node outside the
+                    DOM.
+                    */
+                    if (!element.currentStyle || !element.currentStyle.hasLayout) s.zoom = 1;
+                    
                     var v = parseFloat(nameOrObject[n]);
                     if (v == 1) {
                         s.removeAttribute('filter');
                     } else {
                         s.filter = 'alpha(opacity=' + Math.round(v * 100) + ')';
                     }
+                    
                 } else {
                     s[n] = nameOrObject[n];
                 }
@@ -1599,12 +1621,12 @@ animation code based on http://github.com/madrobby/emile.
             var windowSize, documentSize;
             
             var opp = axis == 'Width' ? 'Height' : 'Width', 
-                bodyClientOpp = document.body['client' + opp],
-                bodyScrollOpp = document.body['scroll' + opp], 
-                windowInnerCur = window['inner' + axis], 
-                docElClientCur = document.documentElement['client' + axis], 
-                bodyClientCur = document.body['client' + axis],
-                bodyScrollCur = document.body['scroll' + axis];
+                bodyClientOpp = im.__doc.body['client' + opp],
+                bodyScrollOpp = im.__doc.body['scroll' + opp], 
+                windowInnerCur = im.__win['inner' + axis], 
+                docElClientCur = im.__doc.documentElement['client' + axis], 
+                bodyClientCur = im.__doc.body['client' + axis],
+                bodyScrollCur = im.__doc.body['scroll' + axis];
             
             if (!im.browser.msie) {
                 windowSize = windowInnerCur;
@@ -1826,13 +1848,13 @@ so it will not check the location in the DOM!
         
         // based on study of blog post at: http://ejohn.org/blog/comparing-document-position/ and jQuery code.
         var sort = (function(){
-            if (document.documentElement.compareDocumentPosition) {
+            if (im.__doc.documentElement.compareDocumentPosition) {
                 return function(a, b) {
                     var r = a.compareDocumentPosition(b) & 4 ? -1 : a === b ? 0 : 1;
                     if (r == 0) duplicate = true;
                     return r;
                 };
-            } else if ("sourceIndex" in document.documentElement) {
+            } else if ("sourceIndex" in im.__doc.documentElement) {
                 return function(a, b) {
                     var r = a.sourceIndex - b.sourceIndex; // return values lower than -1 or higher than 1 does not matter.
                     if (r == 0) duplicate = true;
@@ -1950,7 +1972,7 @@ so it will not check the location in the DOM!
                     axis = AXISCHILD;
                 } else if (/^#/.test(bit)) {
                     // does not check its place in the DOM and simply overrides the current contexts!
-                    var el = document.getElementById(bit.substring(1, bit.length));
+                    var el = im.__doc.getElementById(bit.substring(1, bit.length));
                     currentContexts = el ? [el] : [];
                     axis = AXISALL;
                 } else {
@@ -2253,7 +2275,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         
         if (t.length == 0) return; // don't walk when there are no triggers
         t = parseTriggers(t);
-        if (nodes.length == 0) nodes.push(document.body);
+        if (nodes.length == 0) nodes.push(im.__doc.body);
         
         var nl = nodes.length;
         while (nl--) {

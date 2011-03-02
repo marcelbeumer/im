@@ -1,3 +1,10 @@
+= 1.2.2 =
+
+* Implemented onready and onload as custom events to force the correct order of execution.
+* (IE) Allow setting of CSS properties when nodes are not yet in the DOM.
+* Getting CSS properties of nodes that have not been in the DOM safely return undefined.
+* Trying to remove elements that are outside the DOM will not throw an error.
+
 = 1.2.1 =
 
 * Added im.proxy to core.

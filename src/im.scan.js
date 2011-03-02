@@ -190,7 +190,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         
         if (t.length == 0) return; // don't walk when there are no triggers
         t = parseTriggers(t);
-        if (nodes.length == 0) nodes.push(document.body);
+        if (nodes.length == 0) nodes.push(im.__doc.body);
         
         var nl = nodes.length;
         while (nl--) {

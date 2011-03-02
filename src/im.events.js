@@ -412,7 +412,7 @@ im.events.js
             // when can only do this trick when we are toplevel.
             if (toplevel) (function(){
                 try {
-                    document.documentElement.doScroll("left");
+                    im.__doc.documentElement.doScroll("left");
                 } catch(e) {
                     setTimeout(arguments.callee, 0);
                     return;
@@ -431,31 +431,31 @@ im.events.js
         for some browsers. Also, bind to onload to be sure.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (document.addEventListener) {
+            if (im.__doc.addEventListener) {
                 // the proper way
                 _callback = callback;
-                document.addEventListener("DOMContentLoaded", _callback, false);
+                im.__doc.addEventListener("DOMContentLoaded", _callback, false);
                 
-            } else if (window.attachEvent) {
+            } else if (im.__win.attachEvent) {
                 // might be late
-                _callback = function(){if (document.readyState === "complete") callback();};
-                document.attachEvent("onreadystatechange", _callback);
+                _callback = function(){if (im.__doc.readyState === "complete") callback();};
+                im.__doc.attachEvent("onreadystatechange", _callback);
                 // should work
                 if (im.browser.msie) explorerScrollCheck(callback);
             }
             
             // always safe
-            im.bind(window, 'load', callback);
+            im.bind(im.__win, 'load', callback);
         };
         
         /* ---------------------------------------------------------------------------
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (document.removeEventListener) {
-                document.removeEventListener("DOMContentLoaded", _callback, false);
-            } else if (window.detachEvent) {
-                document.detachEvent("onreadystatechange", _callback);
+            if (im.__doc.removeEventListener) {
+                im.__doc.removeEventListener("DOMContentLoaded", _callback, false);
+            } else if (im.__win.detachEvent) {
+                im.__doc.detachEvent("onreadystatechange", _callback);
             }
         };
         
@@ -480,17 +480,17 @@ im.events.js
         impl.validateElement - will only bind this event to the window object
         --------------------------------------------------------------------------- */
         impl.validateElement = function(element) {
-            return element === window;
+            return element === im.__win;
         };
         
         /* ---------------------------------------------------------------------------
         impl.bindRealEvent - bind the actual browser event.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (window.addEventListener) {
-                window.addEventListener("load", callback, false);
-            } else if (window.attachEvent) {
-                window.attachEvent("onload", callback);
+            if (im.__win.addEventListener) {
+                im.__win.addEventListener("load", callback, false);
+            } else if (im.__win.attachEvent) {
+                im.__win.attachEvent("onload", callback);
             }
         };
         
@@ -498,10 +498,10 @@ im.events.js
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (document.removeEventListener) {
-                document.removeEventListener("load", callback, false);
-            } else if (window.detachEvent) {
-                document.detachEvent("onload", callback);
+            if (im.__doc.removeEventListener) {
+                im.__doc.removeEventListener("load", callback, false);
+            } else if (im.__win.detachEvent) {
+                im.__doc.detachEvent("onload", callback);
             }
         };
         
@@ -522,14 +522,14 @@ im.events.js
     im.onready - binds onready event handler to document
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
-        im.bind(document, 'ready', handler);
+        im.bind(im.__doc, 'ready', handler);
     };
     
     /* ---------------------------------------------------------------------------
     im.onload - bind event handler on the onload event of the window.
     --------------------------------------------------------------------------- */
     im.onload = function(handler) {
-        im.bind(window, 'load', handler);
+        im.bind(im.__win, 'load', handler);
     };
     
 })(window.im);

@@ -72,7 +72,10 @@ animation code based on http://github.com/madrobby/emile.
     --------------------------------------------------------------------------- */
     im.css = function(element, nameOrObject) {
         if (im.isString(nameOrObject)) {
-            var c = element.currentStyle ? element.currentStyle : getComputedStyle(element, null);
+            
+            var c = element.currentStyle !== undefined ? element.currentStyle : getComputedStyle(element, null);
+            if (!c) return; // return undefined when we can't find any style (most likely node outside the DOM)
+            
             if (im.browser.msie && nameOrObject == "opacity") {
                 var match = (element.currentStyle.filter + '').match(/alpha\(opacity=(\d+)/);
                 return ((match && match.length > 1) ? (parseInt(match[1], 10) / 100) : 1) + '';
@@ -83,13 +86,21 @@ animation code based on http://github.com/madrobby/emile.
             for (var n in nameOrObject) {
                 var s = element.style;
                 if (im.browser.msie && n == 'opacity') {
-                    if (!element.currentStyle.hasLayout) s.zoom = 1;
+                    
+                    /* 
+                    We set zoom when no hasLayout, or when the node doesn't have style yet,
+                    which could happen when we are setting properties on a node outside the
+                    DOM.
+                    */
+                    if (!element.currentStyle || !element.currentStyle.hasLayout) s.zoom = 1;
+                    
                     var v = parseFloat(nameOrObject[n]);
                     if (v == 1) {
                         s.removeAttribute('filter');
                     } else {
                         s.filter = 'alpha(opacity=' + Math.round(v * 100) + ')';
                     }
+                    
                 } else {
                     s[n] = nameOrObject[n];
                 }
@@ -355,12 +366,12 @@ animation code based on http://github.com/madrobby/emile.
             var windowSize, documentSize;
             
             var opp = axis == 'Width' ? 'Height' : 'Width', 
-                bodyClientOpp = document.body['client' + opp],
-                bodyScrollOpp = document.body['scroll' + opp], 
-                windowInnerCur = window['inner' + axis], 
-                docElClientCur = document.documentElement['client' + axis], 
-                bodyClientCur = document.body['client' + axis],
-                bodyScrollCur = document.body['scroll' + axis];
+                bodyClientOpp = im.__doc.body['client' + opp],
+                bodyScrollOpp = im.__doc.body['scroll' + opp], 
+                windowInnerCur = im.__win['inner' + axis], 
+                docElClientCur = im.__doc.documentElement['client' + axis], 
+                bodyClientCur = im.__doc.body['client' + axis],
+                bodyScrollCur = im.__doc.body['scroll' + axis];
             
             if (!im.browser.msie) {
                 windowSize = windowInnerCur;

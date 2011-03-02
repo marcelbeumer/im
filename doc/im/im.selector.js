@@ -135,13 +135,13 @@ so it will not check the location in the DOM!
         
         // based on study of blog post at: http://ejohn.org/blog/comparing-document-position/ and jQuery code.
         var sort = (function(){
-            if (document.documentElement.compareDocumentPosition) {
+            if (im.__doc.documentElement.compareDocumentPosition) {
                 return function(a, b) {
                     var r = a.compareDocumentPosition(b) & 4 ? -1 : a === b ? 0 : 1;
                     if (r == 0) duplicate = true;
                     return r;
                 };
-            } else if ("sourceIndex" in document.documentElement) {
+            } else if ("sourceIndex" in im.__doc.documentElement) {
                 return function(a, b) {
                     var r = a.sourceIndex - b.sourceIndex; // return values lower than -1 or higher than 1 does not matter.
                     if (r == 0) duplicate = true;
@@ -259,7 +259,7 @@ so it will not check the location in the DOM!
                     axis = AXISCHILD;
                 } else if (/^#/.test(bit)) {
                     // does not check its place in the DOM and simply overrides the current contexts!
-                    var el = document.getElementById(bit.substring(1, bit.length));
+                    var el = im.__doc.getElementById(bit.substring(1, bit.length));
                     currentContexts = el ? [el] : [];
                     axis = AXISALL;
                 } else {

@@ -32,7 +32,7 @@ im('.element').async(1000)
     var stubChain = function(obj, store) {
         var s = store;
         for (var name in im.chains) {
-            if (name != 'sync' && name != 'cancel') obj[name] = createMemorizer(name, s);
+            if (name != 'sync' && name != 'forget') obj[name] = createMemorizer(name, s);
         }
     };
     
@@ -77,9 +77,9 @@ im('.element').async(1000)
     };
 
     /* ---------------------------------------------------------------------------
-    chains.cancel - cancels all async store and goes back to sync mode
+    chains.forget - forgets all async store and goes back to sync mode
     --------------------------------------------------------------------------- */
-    im.chains.cancel = function() {
+    im.chains.forget = function() {
         if (!this.__asyncstores) return this;
         
         var l = this.__asyncstores.length;

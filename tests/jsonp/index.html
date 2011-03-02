@@ -7,7 +7,7 @@
             im(function(){
                 im('body').bind('click', function(){
                     
-                    var handler = im.jsonp('test.js?callback=$', function(data){
+                    var handler = im.jsonp('test.js?cb=$', function(data){
                         alert('all went fine');
                         console.dir(data);
                     }, function(){
