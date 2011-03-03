@@ -3,28 +3,74 @@
 im.core.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(ns){
-    // ---------------------------------------------------------------------------
+(function(window, environment){
+    
     var VERSION = "{{IM_VERSION}}";
     
     /* 
     keep reference to ns.im in case there was already something referenced
     and we need to do a noConflict later.
     */
-    var prevNS = ns.im;
+    var prevNS = window.im,
+        callee = arguments.callee,
+        constructors = environment ? environment.constructors : [];
 
     /* ---------------------------------------------------------------------------
     im - the public chain constructor
         param selector: a DOM element, array of elements, HTML string or CSS selector.
         param context: a context where to search from in case of a CSS selector.
     --------------------------------------------------------------------------- */
-    var im = ns.im = function(selector, context) {
+    var im = function(selector, context) {
         // im is technically a wrapper around the chains(.init) constructor
         return new Chain(selector, context);
     };
     
-    // ---------------------------------------------------------------------------
+    /* ---------------------------------------------------------------------------
+    expose version
+    --------------------------------------------------------------------------- */
     im.version = VERSION;
+    
+    /* ---------------------------------------------------------------------------
+    bind im to either an environment object, or to the window object.
+    --------------------------------------------------------------------------- */
+    if (environment) {
+        environment.im = im;
+    } else {
+        window.im = im;
+    }
+    
+    /* ---------------------------------------------------------------------------
+    im.addConstructor - adds im environment constructor.
+        param fn: constructor function
+        
+    The constructor function will be called by im.env with the params:
+        im - the im object
+        window - the window object
+        document - the document object
+    --------------------------------------------------------------------------- */
+    im.addConstructor = function(fn) {
+        constructors.push(fn);
+    };
+    
+    /* ---------------------------------------------------------------------------
+    im.env - create new environment.
+    --------------------------------------------------------------------------- */
+    im.env = function(win, doc) {
+        
+        win = win || window;
+        
+        var o = {constructors : constructors},
+            l = constructors.length,
+            x;
+        
+        callee(win, o);
+        
+        for (x = 0; x < l; x++) {
+            constructors[x](o.im, win, doc || win.document);
+        }
+        
+        return o.im;
+    };
     
     /* ---------------------------------------------------------------------------
     im.noConflict - removes IM from global namespace, and returns IM itself.
@@ -51,16 +97,6 @@ im.core.js
             mozilla : /mozilla/.test(userAgent) && !(/(compatible|webkit)/.test(userAgent))
         };
     })();
-    
-    /* ---------------------------------------------------------------------------
-    
-    --------------------------------------------------------------------------- */
-    im.setWindow = function(windowObj) {
-        im.__win = windowObj;
-        im.__doc = windowObj.document;
-    };
-    
-    im.setWindow(window);
     
     /* ---------------------------------------------------------------------------
     im.isFunction - safe isFunction
@@ -299,4 +335,4 @@ im.core.js
         return this;
     };
     
-})(window);
+})(window, false);

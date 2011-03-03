@@ -1,0 +1,55 @@
+<!DOCTYPE "html">
+<html>
+    <head>
+        <script src="../../src/im.core.js"></script>
+        <script src="../../src/im.dom.js"></script>
+        <script src="../../src/im.events.js"></script>
+        <script src="../../src/im.css.js"></script>
+        <script src="../../src/im.selector.js"></script>
+        <script src="../../src/im.scan.js"></script>
+        <script src="../../src/im.boot.js"></script>
+        
+        <script>
+        
+            // we do onload for now, so we are sure all is loaded, including the frame
+            im.onload(function(){
+                
+                // just to show it works, we create a brand new im object
+                var $ = im.env();
+                
+                // console to prove we really created a new object!
+                if (typeof console != 'undefined') console.log('$ !== im ? ' + ($ !== im));
+                
+                // and do something with it in the DOM
+                $('.block').animate({backgroundColor : 'rgb(0, 255, 0)'});
+                
+                // bind a click to the anchor
+                $('.go').bind('click', function(){
+                    
+                    // get the iframe
+                    var frame = im('#frame').el(0);
+                    
+                    // create a brand new im that operates on the iframe window and document
+                    // and don't worry, this is so fast you can hardly measure it.
+                    var frame_im = im.env(frame, frame.Document || frame.contentDocument);
+                    
+                    // animate something in the frame
+                    frame_im('.window-block').animate({backgroundColor : 'rgb(255, 255, 0)'});
+                    
+                    // of course we can still use other environments at the same time
+                    $('.block').animate({backgroundColor : 'rgb(255, 0, 0)'});
+                    
+                });
+                
+            });
+        </script>
+    </head>
+    <body>
+        <a href="#" class="go">Click me to modify the iframe with im.env</a>
+        <h2>Our block:</h2>
+        <div class="block" style="background-color:rgb(255, 0, 0);width:500px;height:100px;"></div>
+        
+        <h2>Iframe block:</h2>
+        <iframe id="frame" src="window.html" style="width:550px;height:150px;border:2px solid black;"></iframe>
+    </body>
+</html>

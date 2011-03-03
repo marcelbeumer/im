@@ -5,7 +5,7 @@ im.css.js
 animation code based on http://github.com/madrobby/emile.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     private properties
@@ -366,12 +366,12 @@ animation code based on http://github.com/madrobby/emile.
             var windowSize, documentSize;
             
             var opp = axis == 'Width' ? 'Height' : 'Width', 
-                bodyClientOpp = im.__doc.body['client' + opp],
-                bodyScrollOpp = im.__doc.body['scroll' + opp], 
-                windowInnerCur = im.__win['inner' + axis], 
-                docElClientCur = im.__doc.documentElement['client' + axis], 
-                bodyClientCur = im.__doc.body['client' + axis],
-                bodyScrollCur = im.__doc.body['scroll' + axis];
+                bodyClientOpp = document.body['client' + opp],
+                bodyScrollOpp = document.body['scroll' + opp], 
+                windowInnerCur = window['inner' + axis], 
+                docElClientCur = document.documentElement['client' + axis], 
+                bodyClientCur = document.body['client' + axis],
+                bodyScrollCur = document.body['scroll' + axis];
             
             if (!im.browser.msie) {
                 windowSize = windowInnerCur;
@@ -455,4 +455,4 @@ animation code based on http://github.com/madrobby/emile.
        if (this.length > 0) return im.height(this[0], options);
     };
     
-})(window.im || window);
+});

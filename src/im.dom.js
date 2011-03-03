@@ -3,7 +3,7 @@
 im.dom.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     im.getAncestors - gets all ancestors of an element
@@ -368,7 +368,7 @@ im.dom.js
     Note that the html string will be trimmed.
     --------------------------------------------------------------------------- */
     im.create = function(html) {
-        var div = im.__doc.createElement('div');
+        var div = document.createElement('div');
         div.innerHTML = im.trim(html);
         return div.firstChild;
     };
@@ -415,4 +415,4 @@ im.dom.js
         return this;
     };
     
-})(window.im || window);
+});

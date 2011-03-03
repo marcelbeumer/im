@@ -3,28 +3,74 @@
 im.core.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(ns){
-    // ---------------------------------------------------------------------------
+(function(window, environment){
+    
     var VERSION = "post-1.2.1-dev";
     
     /* 
     keep reference to ns.im in case there was already something referenced
     and we need to do a noConflict later.
     */
-    var prevNS = ns.im;
+    var prevNS = window.im,
+        callee = arguments.callee,
+        constructors = environment ? environment.constructors : [];
 
     /* ---------------------------------------------------------------------------
     im - the public chain constructor
         param selector: a DOM element, array of elements, HTML string or CSS selector.
         param context: a context where to search from in case of a CSS selector.
     --------------------------------------------------------------------------- */
-    var im = ns.im = function(selector, context) {
+    var im = function(selector, context) {
         // im is technically a wrapper around the chains(.init) constructor
         return new Chain(selector, context);
     };
     
-    // ---------------------------------------------------------------------------
+    /* ---------------------------------------------------------------------------
+    expose version
+    --------------------------------------------------------------------------- */
     im.version = VERSION;
+    
+    /* ---------------------------------------------------------------------------
+    bind im to either an environment object, or to the window object.
+    --------------------------------------------------------------------------- */
+    if (environment) {
+        environment.im = im;
+    } else {
+        window.im = im;
+    }
+    
+    /* ---------------------------------------------------------------------------
+    im.addConstructor - adds im environment constructor.
+        param fn: constructor function
+        
+    The constructor function will be called by im.env with the params:
+        im - the im object
+        window - the window object
+        document - the document object
+    --------------------------------------------------------------------------- */
+    im.addConstructor = function(fn) {
+        constructors.push(fn);
+    };
+    
+    /* ---------------------------------------------------------------------------
+    im.env - create new environment.
+    --------------------------------------------------------------------------- */
+    im.env = function(win, doc) {
+        
+        win = win || window;
+        
+        var o = {constructors : constructors},
+            l = constructors.length,
+            x;
+        
+        callee(win, o);
+        
+        for (x = 0; x < l; x++) {
+            constructors[x](o.im, win, doc || win.document);
+        }
+        
+        return o.im;
+    };
     
     /* ---------------------------------------------------------------------------
     im.noConflict - removes IM from global namespace, and returns IM itself.
@@ -51,16 +97,6 @@ im.core.js
             mozilla : /mozilla/.test(userAgent) && !(/(compatible|webkit)/.test(userAgent))
         };
     })();
-    
-    /* ---------------------------------------------------------------------------
-    
-    --------------------------------------------------------------------------- */
-    im.setWindow = function(windowObj) {
-        im.__win = windowObj;
-        im.__doc = windowObj.document;
-    };
-    
-    im.setWindow(window);
     
     /* ---------------------------------------------------------------------------
     im.isFunction - safe isFunction
@@ -299,13 +335,13 @@ im.core.js
         return this;
     };
     
-})(window);
+})(window, false);
 /* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 im.dom.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     im.getAncestors - gets all ancestors of an element
@@ -670,7 +706,7 @@ im.dom.js
     Note that the html string will be trimmed.
     --------------------------------------------------------------------------- */
     im.create = function(html) {
-        var div = im.__doc.createElement('div');
+        var div = document.createElement('div');
         div.innerHTML = im.trim(html);
         return div.firstChild;
     };
@@ -717,13 +753,12 @@ im.dom.js
         return this;
     };
     
-})(window.im || window);
-/* -------------------------------------------------------
+});/* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 im.events.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     store - stores event data in certain key/bucket
@@ -1132,7 +1167,7 @@ im.events.js
             // when can only do this trick when we are toplevel.
             if (toplevel) (function(){
                 try {
-                    im.__doc.documentElement.doScroll("left");
+                    document.documentElement.doScroll("left");
                 } catch(e) {
                     setTimeout(arguments.callee, 0);
                     return;
@@ -1151,31 +1186,31 @@ im.events.js
         for some browsers. Also, bind to onload to be sure.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (im.__doc.addEventListener) {
+            if (document.addEventListener) {
                 // the proper way
                 _callback = callback;
-                im.__doc.addEventListener("DOMContentLoaded", _callback, false);
+                document.addEventListener("DOMContentLoaded", _callback, false);
                 
-            } else if (im.__win.attachEvent) {
+            } else if (window.attachEvent) {
                 // might be late
-                _callback = function(){if (im.__doc.readyState === "complete") callback();};
-                im.__doc.attachEvent("onreadystatechange", _callback);
+                _callback = function(){if (document.readyState === "complete") callback();};
+                document.attachEvent("onreadystatechange", _callback);
                 // should work
                 if (im.browser.msie) explorerScrollCheck(callback);
             }
             
             // always safe
-            im.bind(im.__win, 'load', callback);
+            im.bind(window, 'load', callback);
         };
         
         /* ---------------------------------------------------------------------------
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (im.__doc.removeEventListener) {
-                im.__doc.removeEventListener("DOMContentLoaded", _callback, false);
-            } else if (im.__win.detachEvent) {
-                im.__doc.detachEvent("onreadystatechange", _callback);
+            if (document.removeEventListener) {
+                document.removeEventListener("DOMContentLoaded", _callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onreadystatechange", _callback);
             }
         };
         
@@ -1200,17 +1235,17 @@ im.events.js
         impl.validateElement - will only bind this event to the window object
         --------------------------------------------------------------------------- */
         impl.validateElement = function(element) {
-            return element === im.__win;
+            return element === window;
         };
         
         /* ---------------------------------------------------------------------------
         impl.bindRealEvent - bind the actual browser event.
         --------------------------------------------------------------------------- */
         impl.bindRealEvent = function(callback) {
-            if (im.__win.addEventListener) {
-                im.__win.addEventListener("load", callback, false);
-            } else if (im.__win.attachEvent) {
-                im.__win.attachEvent("onload", callback);
+            if (window.addEventListener) {
+                window.addEventListener("load", callback, false);
+            } else if (window.attachEvent) {
+                window.attachEvent("onload", callback);
             }
         };
         
@@ -1218,10 +1253,10 @@ im.events.js
         impl.unbindRealEvent - unbind browser events
         --------------------------------------------------------------------------- */
         impl.unbindRealEvent = function(callback) {
-            if (im.__doc.removeEventListener) {
-                im.__doc.removeEventListener("load", callback, false);
-            } else if (im.__win.detachEvent) {
-                im.__doc.detachEvent("onload", callback);
+            if (document.removeEventListener) {
+                document.removeEventListener("load", callback, false);
+            } else if (window.detachEvent) {
+                document.detachEvent("onload", callback);
             }
         };
         
@@ -1242,25 +1277,24 @@ im.events.js
     im.onready - binds onready event handler to document
     --------------------------------------------------------------------------- */
     im.onready = function(handler) {
-        im.bind(im.__doc, 'ready', handler);
+        im.bind(document, 'ready', handler);
     };
     
     /* ---------------------------------------------------------------------------
     im.onload - bind event handler on the onload event of the window.
     --------------------------------------------------------------------------- */
     im.onload = function(handler) {
-        im.bind(im.__win, 'load', handler);
+        im.bind(window, 'load', handler);
     };
     
-})(window.im);
-/* -------------------------------------------------------
+});/* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 im.css.js
 
 animation code based on http://github.com/madrobby/emile.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     private properties
@@ -1621,12 +1655,12 @@ animation code based on http://github.com/madrobby/emile.
             var windowSize, documentSize;
             
             var opp = axis == 'Width' ? 'Height' : 'Width', 
-                bodyClientOpp = im.__doc.body['client' + opp],
-                bodyScrollOpp = im.__doc.body['scroll' + opp], 
-                windowInnerCur = im.__win['inner' + axis], 
-                docElClientCur = im.__doc.documentElement['client' + axis], 
-                bodyClientCur = im.__doc.body['client' + axis],
-                bodyScrollCur = im.__doc.body['scroll' + axis];
+                bodyClientOpp = document.body['client' + opp],
+                bodyScrollOpp = document.body['scroll' + opp], 
+                windowInnerCur = window['inner' + axis], 
+                docElClientCur = document.documentElement['client' + axis], 
+                bodyClientCur = document.body['client' + axis],
+                bodyScrollCur = document.body['scroll' + axis];
             
             if (!im.browser.msie) {
                 windowSize = windowInnerCur;
@@ -1710,7 +1744,7 @@ animation code based on http://github.com/madrobby/emile.
        if (this.length > 0) return im.height(this[0], options);
     };
     
-})(window.im || window);
+});
 /* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 im.selector.js - simple css selector engine
@@ -1731,7 +1765,7 @@ IMPORTANT LIMITATION: #id just does a doc.getElementById,
 so it will not check the location in the DOM!
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(im){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
@@ -1848,13 +1882,13 @@ so it will not check the location in the DOM!
         
         // based on study of blog post at: http://ejohn.org/blog/comparing-document-position/ and jQuery code.
         var sort = (function(){
-            if (im.__doc.documentElement.compareDocumentPosition) {
+            if (document.documentElement.compareDocumentPosition) {
                 return function(a, b) {
                     var r = a.compareDocumentPosition(b) & 4 ? -1 : a === b ? 0 : 1;
                     if (r == 0) duplicate = true;
                     return r;
                 };
-            } else if ("sourceIndex" in im.__doc.documentElement) {
+            } else if ("sourceIndex" in document.documentElement) {
                 return function(a, b) {
                     var r = a.sourceIndex - b.sourceIndex; // return values lower than -1 or higher than 1 does not matter.
                     if (r == 0) duplicate = true;
@@ -1972,7 +2006,7 @@ so it will not check the location in the DOM!
                     axis = AXISCHILD;
                 } else if (/^#/.test(bit)) {
                     // does not check its place in the DOM and simply overrides the current contexts!
-                    var el = im.__doc.getElementById(bit.substring(1, bit.length));
+                    var el = document.getElementById(bit.substring(1, bit.length));
                     currentContexts = el ? [el] : [];
                     axis = AXISALL;
                 } else {
@@ -2082,13 +2116,12 @@ so it will not check the location in the DOM!
         return this.reset(results);
     };
     
-})(window.im || window);
-/* -------------------------------------------------------
+});/* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 scan.js - scanning the DOM with basic CSS selectors.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(ns){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
@@ -2247,7 +2280,7 @@ scan.js - scanning the DOM with basic CSS selectors.
     };
     
     /* ---------------------------------------------------------------------------
-    ns.scan - scans node or document with very basic CSS selectors, triggering 
+    im.scan - scans node or document with very basic CSS selectors, triggering 
     registered callbacks on a match.
     
     Examples of usage:
@@ -2260,7 +2293,7 @@ scan.js - scanning the DOM with basic CSS selectors.
     
     Or any combination of those, as it checks all passed arguments by type.
     --------------------------------------------------------------------------- */
-    ns.scan = function() {
+    im.scan = function() {
         var l = arguments.length, t = [], nodes = [], str = Object.prototype.toString;
         while (l--) {
             var a = arguments[l];
@@ -2275,7 +2308,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         
         if (t.length == 0) return; // don't walk when there are no triggers
         t = parseTriggers(t);
-        if (nodes.length == 0) nodes.push(im.__doc.body);
+        if (nodes.length == 0) nodes.push(document.body);
         
         var nl = nodes.length;
         while (nl--) {
@@ -2294,7 +2327,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         register('foo', 'a.button', function(){alert(this + ' is a button');});
         register('foo', 'bar', 'a.button', function(){alert(this + ' is a button');});
     --------------------------------------------------------------------------- */
-    ns.scan.register = function() {
+    im.scan.register = function() {
         var type, selector, fn, l = arguments.length;
         if (l < 3) throw new Error('scan.register takes at least three parameters');
         
@@ -2310,6 +2343,13 @@ scan.js - scanning the DOM with basic CSS selectors.
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
-    ns.scan.registry = registry;
+    im.scan.registry = registry;
     
-})(window.im || window);
+});(function(){
+
+    /* ---------------------------------------------------------------------------
+    simply create our first environment and put it on the window object
+    --------------------------------------------------------------------------- */
+    window.im = im.env();
+    
+}());

@@ -3,7 +3,7 @@
 scan.js - scanning the DOM with basic CSS selectors.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(ns){
+im.addConstructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
@@ -162,7 +162,7 @@ scan.js - scanning the DOM with basic CSS selectors.
     };
     
     /* ---------------------------------------------------------------------------
-    ns.scan - scans node or document with very basic CSS selectors, triggering 
+    im.scan - scans node or document with very basic CSS selectors, triggering 
     registered callbacks on a match.
     
     Examples of usage:
@@ -175,7 +175,7 @@ scan.js - scanning the DOM with basic CSS selectors.
     
     Or any combination of those, as it checks all passed arguments by type.
     --------------------------------------------------------------------------- */
-    ns.scan = function() {
+    im.scan = function() {
         var l = arguments.length, t = [], nodes = [], str = Object.prototype.toString;
         while (l--) {
             var a = arguments[l];
@@ -190,7 +190,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         
         if (t.length == 0) return; // don't walk when there are no triggers
         t = parseTriggers(t);
-        if (nodes.length == 0) nodes.push(im.__doc.body);
+        if (nodes.length == 0) nodes.push(document.body);
         
         var nl = nodes.length;
         while (nl--) {
@@ -209,7 +209,7 @@ scan.js - scanning the DOM with basic CSS selectors.
         register('foo', 'a.button', function(){alert(this + ' is a button');});
         register('foo', 'bar', 'a.button', function(){alert(this + ' is a button');});
     --------------------------------------------------------------------------- */
-    ns.scan.register = function() {
+    im.scan.register = function() {
         var type, selector, fn, l = arguments.length;
         if (l < 3) throw new Error('scan.register takes at least three parameters');
         
@@ -225,6 +225,6 @@ scan.js - scanning the DOM with basic CSS selectors.
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
-    ns.scan.registry = registry;
+    im.scan.registry = registry;
     
-})(window.im || window);
+});
