@@ -5,7 +5,7 @@ im.css.js
 animation code based on http://github.com/madrobby/emile.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.addConstructor(function (im, window, document) {
+im.add_constructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     private properties
@@ -71,7 +71,7 @@ im.addConstructor(function (im, window, document) {
         Example: im.css(el, 'width'); // returns string
     --------------------------------------------------------------------------- */
     im.css = function(element, nameOrObject) {
-        if (im.isString(nameOrObject)) {
+        if (im.is_string(nameOrObject)) {
             
             var c = element.currentStyle !== undefined ? element.currentStyle : getComputedStyle(element, null);
             if (!c) return; // return undefined when we can't find any style (most likely node outside the DOM)
@@ -112,7 +112,7 @@ im.addConstructor(function (im, window, document) {
     chains.css - wraps im.css
     --------------------------------------------------------------------------- */
     im.chains.css = function(nameOrObject) {
-        if (im.isString(nameOrObject)) {
+        if (im.is_string(nameOrObject)) {
             if (this.length > 0) return im.css(this[0], nameOrObject);
         } else {
             for (var x = 0; x < this.length; x++) im.css(this[x], nameOrObject);

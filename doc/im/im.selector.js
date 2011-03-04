@@ -18,7 +18,7 @@ IMPORTANT LIMITATION: #id just does a doc.getElementById,
 so it will not check the location in the DOM!
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.addConstructor(function (im, window, document) {
+im.add_constructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */
@@ -348,7 +348,7 @@ im.addConstructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.chains.filter = function(selector, invert) {
         var results = [];
-        if (im.isFunction(selector)) {
+        if (im.is_function(selector)) {
             for (var x = 0; x < this.length; x++) {
                 var m = selector.apply(this[x], [x]);
                 if ((!invert && m) || (invert && !m)) results.push(this[x]);

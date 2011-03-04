@@ -3,7 +3,7 @@
 im.dom.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.addConstructor(function (im, window, document) {
+im.add_constructor(function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     im.getAncestors - gets all ancestors of an element
@@ -89,7 +89,7 @@ im.addConstructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.hasClass = function(strOrElement, className) {
         if (!strOrElement) return false;
-        if (!im.isString(strOrElement)) strOrElement = strOrElement.className;
+        if (!im.is_string(strOrElement)) strOrElement = strOrElement.className;
         var r = new RegExp("(^|\\s)" + className + "(\\s|$)");
         return r.test(strOrElement);
     };
