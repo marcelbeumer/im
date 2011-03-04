@@ -3,7 +3,7 @@
 im.events.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.add_constructor(function (im, window, document) {
+im.register('events', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     store - stores event data in certain key/bucket
@@ -117,7 +117,7 @@ im.add_constructor(function (im, window, document) {
         // get event implementationv
         var types = im.bind.types;
         var impl = (types[name] || types['default'])();
-        if (!im.is_function(impl.live)) return;
+        if (!im.isFunction(impl.live)) return;
         
         // bind and store
         var unbind = impl.live(element, selector, name, handler);
@@ -350,7 +350,7 @@ im.add_constructor(function (im, window, document) {
             self.bind = function(element, name, handler) {
                 if (type.done || !impl.validateElement(element)) return;
                 bindRealEvent();
-                if (im.is_function(handler)) type.handlers.push(handler);
+                if (im.isFunction(handler)) type.handlers.push(handler);
             };
             
             /* ---------------------------------------------------------------------------

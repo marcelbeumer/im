@@ -203,7 +203,7 @@ im.core.js
             // we got passed a dom element
             this.length = 1;
             this[0] = selector;
-        } else if (im.is_string(selector)) {
+        } else if (im.isString(selector)) {
             // we got passed a css selector or a html string, let's find out.
             if (selector.match('<.*>')) {
                 // html string
@@ -217,7 +217,7 @@ im.core.js
                 if (!im.selectNodes) throw new Error("Chain: no selectNodes implementation loaded");
                 im.merge(this, im.selectNodes(selector, context));
             }
-        } else if (im.is_function(selector)) {
+        } else if (im.isFunction(selector)) {
             // we got passed an onready handler
             if (!im.onready) throw new Error("Chain: no onready implementation loaded");
             im.onready(selector);
@@ -314,7 +314,7 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.each = function(obj, callback) {
         var length = obj.length;
-        var isObject = length === undefined || im.is_function(obj);
+        var isObject = length === undefined || im.isFunction(obj);
         
         if (isObject) {
             var name;

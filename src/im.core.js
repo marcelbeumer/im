@@ -13,10 +13,8 @@ im.core.js
     var version = "{{IM_VERSION}}",
         prev_im = environment ? environment.prev_im : window.im, // last exposed im, so we can do no_conflict later
         callee = arguments.callee, // we need callee to be able to do .env
-        constructors = environment ? environment.constructors : [], // constructors
+        constructors = environment ? environment.constructors : {}, // constructors
         im;
-        
-    // expose prev_im
 
     /* ---------------------------------------------------------------------------
     im - the public chain constructor
@@ -43,7 +41,7 @@ im.core.js
     }
     
     /* ---------------------------------------------------------------------------
-    im.add_constructor - adds im environment constructor.
+    im.register - registers an im environment constructor.
         param fn: constructor function
         
     The constructor function will be called by im.env with the params:
@@ -51,8 +49,8 @@ im.core.js
         window - the window object
         document - the document object
     --------------------------------------------------------------------------- */
-    im.add_constructor = function(fn) {
-        constructors.push(fn);
+    im.register = function(name, fn) {
+        constructors[name] = fn;
     };
     
     /* ---------------------------------------------------------------------------
@@ -71,16 +69,15 @@ im.core.js
         
         var e = { // environent object
                 constructors : constructors, 
-                prev_im : keep_prev_im ? im.no_conflict(true) : null
+                prev_im : keep_prev_im ? im.noConflict(true) : null
             },
-            l = constructors.length,
-            x;
+            name;
         
         callee(win, e); // create new im on environment
         
         // apply all constructors
-        for (x = 0; x < l; x++) {
-            constructors[x](e.im, win, doc || win.document);
+        for (name in constructors) {
+            constructors[name](e.im, win, doc || win.document);
         }
         
         // return the newly created im
@@ -88,20 +85,17 @@ im.core.js
     };
     
     /* ---------------------------------------------------------------------------
-    im.no_conflict - removes IM from global namespace, and returns IM itself.
+    im.noConflict - removes IM from global namespace, and returns IM itself.
         param no_restore:   (used internally) when true, it returns the previous 
                             window.im, instead of restoring the window.im and 
                             returning the new im.
     --------------------------------------------------------------------------- */
-    im.no_conflict = function(no_restore) {
+    im.noConflict = function(no_restore) {
         if (no_restore === true) return prev_im;
         if (!prev_im) return false;
         window.im = prev_im;
         return im;
     };
-    
-    // legacy: also expose as camelCase
-    im.noConflict = im.no_conflict;
     
     /* ---------------------------------------------------------------------------
     im.browser - parsed user agent. Used jQuery implementation.
@@ -122,44 +116,32 @@ im.core.js
     })();
     
     /* ---------------------------------------------------------------------------
-    im.is_function - safe isFunction
+    im.isFunction - safe isFunction
     --------------------------------------------------------------------------- */
-    im.is_function = function(obj) {
+    im.isFunction = function(obj) {
         return Object.prototype.toString.call(obj) === "[object Function]";
     };
-    
-    // legacy: also expose as camelCase
-    im.isFunction = im.is_function;
 
     /* ---------------------------------------------------------------------------
-    im.is_array - safe isArray
+    im.isArray - safe isArray
     --------------------------------------------------------------------------- */
-    im.is_array = function(obj) {
+    im.isArray = function(obj) {
         return Object.prototype.toString.call(obj) === "[object Array]";
     };
-    
-    // legacy: also expose as camelCase
-    im.isArray = im.is_array;
 
     /* ---------------------------------------------------------------------------
-    im.is_string - safe isString
+    im.isString - safe isString
     --------------------------------------------------------------------------- */
-    im.is_string = function(obj) {
+    im.isString = function(obj) {
         return Object.prototype.toString.call(obj) === "[object String]";
     };
-    
-    // legacy: also expose as camelCase
-    im.isString = im.is_string;
 
     /* ---------------------------------------------------------------------------
-    im.is_object - safe isObject
+    im.isObject - safe isObject
     --------------------------------------------------------------------------- */
-    im.is_object = function(obj) {
+    im.isObject = function(obj) {
         return Object.prototype.toString.call(obj) === "[object Object]";
     };
-
-    // legacy: also expose as camelCase
-    im.isObject = im.is_object;
 
     /* ---------------------------------------------------------------------------
     im.merge - merges two arrays. 
@@ -238,7 +220,7 @@ im.core.js
             // we got passed a dom element
             this.length = 1;
             this[0] = selector;
-        } else if (im.is_string(selector)) {
+        } else if (im.isString(selector)) {
             // we got passed a css selector or a html string, let's find out.
             if (selector.match('<.*>')) {
                 // html string
@@ -252,7 +234,7 @@ im.core.js
                 if (!im.selectNodes) throw new Error("Chain: no selectNodes implementation loaded");
                 im.merge(this, im.selectNodes(selector, context));
             }
-        } else if (im.is_function(selector)) {
+        } else if (im.isFunction(selector)) {
             // we got passed an onready handler
             if (!im.onready) throw new Error("Chain: no onready implementation loaded");
             im.onready(selector);
@@ -349,7 +331,7 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.each = function(obj, callback) {
         var length = obj.length;
-        var isObject = length === undefined || im.is_function(obj);
+        var isObject = length === undefined || im.isFunction(obj);
         
         if (isObject) {
             var name;

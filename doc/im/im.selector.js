@@ -348,7 +348,7 @@ im.add_constructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.chains.filter = function(selector, invert) {
         var results = [];
-        if (im.is_function(selector)) {
+        if (im.isFunction(selector)) {
             for (var x = 0; x < this.length; x++) {
                 var m = selector.apply(this[x], [x]);
                 if ((!invert && m) || (invert && !m)) results.push(this[x]);

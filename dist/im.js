@@ -203,7 +203,7 @@ im.core.js
             // we got passed a dom element
             this.length = 1;
             this[0] = selector;
-        } else if (im.is_string(selector)) {
+        } else if (im.isString(selector)) {
             // we got passed a css selector or a html string, let's find out.
             if (selector.match('<.*>')) {
                 // html string
@@ -217,7 +217,7 @@ im.core.js
                 if (!im.selectNodes) throw new Error("Chain: no selectNodes implementation loaded");
                 im.merge(this, im.selectNodes(selector, context));
             }
-        } else if (im.is_function(selector)) {
+        } else if (im.isFunction(selector)) {
             // we got passed an onready handler
             if (!im.onready) throw new Error("Chain: no onready implementation loaded");
             im.onready(selector);
@@ -314,7 +314,7 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.each = function(obj, callback) {
         var length = obj.length;
-        var isObject = length === undefined || im.is_function(obj);
+        var isObject = length === undefined || im.isFunction(obj);
         
         if (isObject) {
             var name;
@@ -427,7 +427,7 @@ im.add_constructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.hasClass = function(strOrElement, className) {
         if (!strOrElement) return false;
-        if (!im.is_string(strOrElement)) strOrElement = strOrElement.className;
+        if (!im.isString(strOrElement)) strOrElement = strOrElement.className;
         var r = new RegExp("(^|\\s)" + className + "(\\s|$)");
         return r.test(strOrElement);
     };
@@ -872,7 +872,7 @@ im.add_constructor(function (im, window, document) {
         // get event implementationv
         var types = im.bind.types;
         var impl = (types[name] || types['default'])();
-        if (!im.is_function(impl.live)) return;
+        if (!im.isFunction(impl.live)) return;
         
         // bind and store
         var unbind = impl.live(element, selector, name, handler);
@@ -1105,7 +1105,7 @@ im.add_constructor(function (im, window, document) {
             self.bind = function(element, name, handler) {
                 if (type.done || !impl.validateElement(element)) return;
                 bindRealEvent();
-                if (im.is_function(handler)) type.handlers.push(handler);
+                if (im.isFunction(handler)) type.handlers.push(handler);
             };
             
             /* ---------------------------------------------------------------------------
@@ -1360,7 +1360,7 @@ im.add_constructor(function (im, window, document) {
         Example: im.css(el, 'width'); // returns string
     --------------------------------------------------------------------------- */
     im.css = function(element, nameOrObject) {
-        if (im.is_string(nameOrObject)) {
+        if (im.isString(nameOrObject)) {
             
             var c = element.currentStyle !== undefined ? element.currentStyle : getComputedStyle(element, null);
             if (!c) return; // return undefined when we can't find any style (most likely node outside the DOM)
@@ -1401,7 +1401,7 @@ im.add_constructor(function (im, window, document) {
     chains.css - wraps im.css
     --------------------------------------------------------------------------- */
     im.chains.css = function(nameOrObject) {
-        if (im.is_string(nameOrObject)) {
+        if (im.isString(nameOrObject)) {
             if (this.length > 0) return im.css(this[0], nameOrObject);
         } else {
             for (var x = 0; x < this.length; x++) im.css(this[x], nameOrObject);
@@ -2095,7 +2095,7 @@ im.add_constructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.chains.filter = function(selector, invert) {
         var results = [];
-        if (im.is_function(selector)) {
+        if (im.isFunction(selector)) {
             for (var x = 0; x < this.length; x++) {
                 var m = selector.apply(this[x], [x]);
                 if ((!invert && m) || (invert && !m)) results.push(this[x]);

@@ -89,7 +89,7 @@ im.add_constructor(function (im, window, document) {
     --------------------------------------------------------------------------- */
     im.hasClass = function(strOrElement, className) {
         if (!strOrElement) return false;
-        if (!im.is_string(strOrElement)) strOrElement = strOrElement.className;
+        if (!im.isString(strOrElement)) strOrElement = strOrElement.className;
         var r = new RegExp("(^|\\s)" + className + "(\\s|$)");
         return r.test(strOrElement);
     };
