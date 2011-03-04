@@ -1,4 +1,4 @@
-(function(im){
+im.register('xhr', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     
@@ -54,4 +54,4 @@
         return xhr;
     };
     
-})(window.im || window);
+});

@@ -1,4 +1,4 @@
-(function(im){
+im.register('jsonp', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     TODO:
@@ -81,4 +81,4 @@
         return handler;
     };
     
-})(window.im || window);
+});

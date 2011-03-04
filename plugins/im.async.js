@@ -13,7 +13,7 @@ im('.element').async(1000)
 // and so on ...
 
 --------------------------------------------------------------------------- */
-(function(){
+im.register('async', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     (private) createMemorizer - returns function that remembers chain calls.
@@ -111,4 +111,4 @@ im('.element').async(1000)
         };
     }
         
-})();
+});

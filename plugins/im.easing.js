@@ -1,4 +1,4 @@
-(function(){
+im.register('easing', function (im, window, document) {
     
     im.easing = {
     	LINEAR: function (t) {
@@ -47,4 +47,4 @@
     	}
     };
     
-})();
+});

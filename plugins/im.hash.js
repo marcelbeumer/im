@@ -6,7 +6,7 @@ TODO:
     - check hash length and detect when it's too long
     - hash sanity checks
 --------------------------------------------------------------------------- */
-(function(ns){
+im.register('hash', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     hash - constructor
@@ -188,6 +188,6 @@ TODO:
     /* ---------------------------------------------------------------------------
     singleton
     --------------------------------------------------------------------------- */
-    ns.hash = hash();
+    im.hash = hash();
     
-})(window.im || window);
+});

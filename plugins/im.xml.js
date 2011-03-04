@@ -28,10 +28,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(){
-    
-    var im = window.im;
-    if (!im) return;
+im.register('xml', function (im, window, document) {
     
     var ns = im.xml = im.xml || {};
     
@@ -217,8 +214,4 @@ THE SOFTWARE.
         }
     };
     
-    im.xslt = function(sourceDocOrURL, xslDocOrURL) {
-        
-    };
-    
-})();
+});
