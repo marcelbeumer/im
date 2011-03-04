@@ -3,14 +3,14 @@
 im.core.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-(function(window, environment){
+(function(window, document, environment){
     
     // TODO: fix no_conflict!
     
     /* ---------------------------------------------------------------------------
     private variables
     --------------------------------------------------------------------------- */
-    var version = "post-1.2.1-dev",
+    var version = "1.2.2-rc1",
         prev_im = environment ? environment.prev_im : window.im, // last exposed im, so we can do no_conflict later
         callee = arguments.callee, // we need callee to be able to do .env
         constructors = environment ? environment.constructors : {}, // constructors
@@ -52,6 +52,8 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.register = function(name, fn) {
         constructors[name] = fn;
+        // apply directly when in environment (which goes for plugins)
+        if (environment) fn(im, window, document);
     };
     
     /* ---------------------------------------------------------------------------
@@ -70,13 +72,14 @@ im.core.js
                 constructors : constructors, 
                 prev_im : keep_prev_im ? im.noConflict(true) : null
             },
+            doc = win.document;
             name;
         
-        callee(win, e); // create new im on environment
+        callee(win, doc, e); // create new im on environment
         
         // apply all constructors
         for (name in constructors) {
-            constructors[name](e.im, win, win.document);
+            constructors[name](e.im, win, doc);
         }
         
         // return the newly created im
@@ -351,7 +354,7 @@ im.core.js
         return this;
     };
     
-})(window, false);
+})(window, document, false);
 /* -------------------------------------------------------
 //////////////////////////////////////////////////////////
 im.dom.js
