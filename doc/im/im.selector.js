@@ -18,7 +18,7 @@ IMPORTANT LIMITATION: #id just does a doc.getElementById,
 so it will not check the location in the DOM!
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.add_constructor(function (im, window, document) {
+im.register('selector', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     --------------------------------------------------------------------------- */

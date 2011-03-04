@@ -42,6 +42,7 @@ im.core.js
     
     /* ---------------------------------------------------------------------------
     im.register - registers an im environment constructor.
+        param name: name on the constructor
         param fn: constructor function
         
     The constructor function will be called by im.env with the params:
@@ -56,16 +57,14 @@ im.core.js
     /* ---------------------------------------------------------------------------
     im.env - create new environment.
         param win:  (Optional) window object the environment should operate on.
-                    Defaults to window.
-        param doc:  (Optional) Document object the environment should operate on
-                    If not provides, it tries to get the document from the win
-                    param.
+                    Defaults to window. Will try to resolve window object when
+                    passed an iframe object.
         param keep_prev_im: used internally to not overwrite the no_conflict
     --------------------------------------------------------------------------- */
-    im.env = function(win, doc, keep_prev_im) {
+    im.env = function(win, keep_prev_im) {
         
         // get the window object
-        win = win || window;
+        win = win ? (win.contentWindow || win) : window;
         
         var e = { // environent object
                 constructors : constructors, 
@@ -77,7 +76,7 @@ im.core.js
         
         // apply all constructors
         for (name in constructors) {
-            constructors[name](e.im, win, doc || win.document);
+            constructors[name](e.im, win, win.document);
         }
         
         // return the newly created im
@@ -92,7 +91,7 @@ im.core.js
     --------------------------------------------------------------------------- */
     im.noConflict = function(no_restore) {
         if (no_restore === true) return prev_im;
-        if (!prev_im) return false;
+        if (prev_im === null) return false;
         window.im = prev_im;
         return im;
     };

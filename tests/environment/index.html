@@ -8,6 +8,7 @@
         <script src="../../src/im.selector.js"></script>
         <script src="../../src/im.scan.js"></script>
         <script src="../../src/im.boot.js"></script>
+        <script src="../../plugins/im.console.js"></script>
         
         <script>
         
@@ -29,9 +30,9 @@
                     // get the iframe
                     var frame = im('#frame').el(0);
                     
-                    // create a brand new im that operates on the iframe window and document
+                    // create a brand new im that operates on the iframe.
                     // and don't worry, this is so fast you can hardly measure it.
-                    var frame_im = im.env(frame, frame.Document || frame.contentDocument);
+                    var frame_im = im.env(frame);
                     
                     // animate something in the frame
                     frame_im('.window-block').animate({backgroundColor : 'rgb(255, 255, 0)'});

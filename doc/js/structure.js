@@ -25,6 +25,7 @@
                             content : tpl.list(),
                             _sub : {
                                 im : {source : tpl.source('im/im.core.js', 'im -')},
+                                env : {source : tpl.source('im/im.core.js', 'im.env -')},
                                 noConflict : {source : tpl.source('im/im.core.js', 'im.noConflict -')},
                                 browser : {source : tpl.source('im/im.core.js', 'im.browser -')},
                                 isFunction : {source : tpl.source('im/im.core.js', 'im.isFunction -')},

@@ -5,22 +5,23 @@ im.core.js
 ------------------------------------------------------- */
 (function(window, environment){
     
-    var VERSION = "{{IM_VERSION}}";
+    // TODO: fix no_conflict!
     
-    /* 
-    keep reference to ns.im in case there was already something referenced
-    and we need to do a noConflict later.
-    */
-    var prevNS = window.im,
-        callee = arguments.callee,
-        constructors = environment ? environment.constructors : [];
+    /* ---------------------------------------------------------------------------
+    private variables
+    --------------------------------------------------------------------------- */
+    var version = "{{IM_VERSION}}",
+        prev_im = environment ? environment.prev_im : window.im, // last exposed im, so we can do no_conflict later
+        callee = arguments.callee, // we need callee to be able to do .env
+        constructors = environment ? environment.constructors : {}, // constructors
+        im;
 
     /* ---------------------------------------------------------------------------
     im - the public chain constructor
         param selector: a DOM element, array of elements, HTML string or CSS selector.
         param context: a context where to search from in case of a CSS selector.
     --------------------------------------------------------------------------- */
-    var im = function(selector, context) {
+    im = function(selector, context) {
         // im is technically a wrapper around the chains(.init) constructor
         return new Chain(selector, context);
     };
@@ -28,7 +29,7 @@ im.core.js
     /* ---------------------------------------------------------------------------
     expose version
     --------------------------------------------------------------------------- */
-    im.version = VERSION;
+    im.version = version;
     
     /* ---------------------------------------------------------------------------
     bind im to either an environment object, or to the window object.
@@ -40,7 +41,8 @@ im.core.js
     }
     
     /* ---------------------------------------------------------------------------
-    im.addConstructor - adds im environment constructor.
+    im.register - registers an im environment constructor.
+        param name: name on the constructor
         param fn: constructor function
         
     The constructor function will be called by im.env with the params:
@@ -48,35 +50,49 @@ im.core.js
         window - the window object
         document - the document object
     --------------------------------------------------------------------------- */
-    im.addConstructor = function(fn) {
-        constructors.push(fn);
+    im.register = function(name, fn) {
+        constructors[name] = fn;
     };
     
     /* ---------------------------------------------------------------------------
     im.env - create new environment.
+        param win:  (Optional) window object the environment should operate on.
+                    Defaults to window. Will try to resolve window object when
+                    passed an iframe object.
+        param keep_prev_im: used internally to not overwrite the no_conflict
     --------------------------------------------------------------------------- */
-    im.env = function(win, doc) {
+    im.env = function(win, keep_prev_im) {
         
-        win = win || window;
+        // get the window object
+        win = win ? (win.contentWindow || win) : window;
         
-        var o = {constructors : constructors},
-            l = constructors.length,
-            x;
+        var e = { // environent object
+                constructors : constructors, 
+                prev_im : keep_prev_im ? im.noConflict(true) : null
+            },
+            name;
         
-        callee(win, o);
+        callee(win, e); // create new im on environment
         
-        for (x = 0; x < l; x++) {
-            constructors[x](o.im, win, doc || win.document);
+        // apply all constructors
+        for (name in constructors) {
+            constructors[name](e.im, win, win.document);
         }
         
-        return o.im;
+        // return the newly created im
+        return e.im;
     };
     
     /* ---------------------------------------------------------------------------
     im.noConflict - removes IM from global namespace, and returns IM itself.
+        param no_restore:   (used internally) when true, it returns the previous 
+                            window.im, instead of restoring the window.im and 
+                            returning the new im.
     --------------------------------------------------------------------------- */
-    im.noConflict = function() {
-        ns.im = prevNS;
+    im.noConflict = function(no_restore) {
+        if (no_restore === true) return prev_im;
+        if (prev_im === null) return false;
+        window.im = prev_im;
         return im;
     };
     
@@ -243,7 +259,7 @@ im.core.js
     internal use only. Pushes new chain on the stack so we can do a chains.end or
     chains.reset.
     --------------------------------------------------------------------------- */
-    var pushStack = function(obj, selector) {
+    var push_stack = function(obj, selector) {
         var n = im(selector);
         n.__prev = obj;
         return n;
@@ -254,7 +270,7 @@ im.core.js
         param selector (optional): selector like used in im(selector)
     --------------------------------------------------------------------------- */
     im.chains.reset = function(selector) {
-        return pushStack(this, selector);
+        return push_stack(this, selector);
     };
 
     /* ---------------------------------------------------------------------------

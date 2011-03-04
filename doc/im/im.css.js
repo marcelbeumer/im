@@ -5,7 +5,7 @@ im.css.js
 animation code based on http://github.com/madrobby/emile.
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.add_constructor(function (im, window, document) {
+im.register('css', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     private properties

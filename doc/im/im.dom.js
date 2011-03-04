@@ -3,7 +3,7 @@
 im.dom.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.add_constructor(function (im, window, document) {
+im.register('dom', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     im.getAncestors - gets all ancestors of an element

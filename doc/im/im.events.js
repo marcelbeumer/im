@@ -3,7 +3,7 @@
 im.events.js
 //////////////////////////////////////////////////////////
 ------------------------------------------------------- */
-im.add_constructor(function (im, window, document) {
+im.register('events', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     store - stores event data in certain key/bucket
