@@ -32,7 +32,9 @@ im.register('async', function (im, window, document) {
     var stubChain = function(obj, store) {
         var s = store;
         for (var name in im.chains) {
-            if (name != 'sync' && name != 'forget') obj[name] = createMemorizer(name, s);
+            if (name != 'sync' && name != 'forget' && name != 'forfeit') {
+                obj[name] = createMemorizer(name, s);
+            }
         }
     };
     
@@ -46,6 +48,20 @@ im.register('async', function (im, window, document) {
     };
     
     /* ---------------------------------------------------------------------------
+    
+    --------------------------------------------------------------------------- */
+    function createStore(obj, type) {
+        // array where we store all calls
+        var store = [], name = '__' + type + 'stores';
+        
+        // keep track of all stores, so we can clear them later
+        obj[name] = obj[name] || [];
+        obj[name].push(store);
+        
+        return store;
+    }
+    
+    /* ---------------------------------------------------------------------------
     chains.async - sets chain in async mode. Will say async until .sync call.
         param time: timeout in milliseconds (default is 0)
         
@@ -56,21 +72,23 @@ im.register('async', function (im, window, document) {
         var t = time || 0;
         
         // array where we store all calls in async mode
-        var store = [];
-        
-        // keep track of all stores, so we can clear them later
-        this.__asyncstores = this.__asyncstores || [];
-        this.__asyncstores.push(store);
+        var store = createStore(this, 'async');
 
         // stub the chain right away
         stubChain(this, store);
                 
         var that = this;
         window.setTimeout(function(){
+            
             // restore chains
             restoreChain(that);
+            
             // run stored chain calls normally
             im.each(store, function(){that = that[this.name].apply(that, this.arg);});
+            
+            // clear store
+            store.splice(0, store.length);
+            
         }, t);
         
         return this;
@@ -98,6 +116,66 @@ im.register('async', function (im, window, document) {
     im.chains.sync = function() {
         restoreChain(this);
         return this;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    chains.until - waits until selector or function returns something
+    --------------------------------------------------------------------------- */
+    im.chains.until = function(selectorOrFunction, speed, callback) {
+        var sel, fn, that = this;
+        
+        // array where we store all calls in async mode
+        var store = createStore(this, 'until');
+
+        // stub the chain right away
+        stubChain(this, store);
+        
+        if (im.isFunction(selectorOrFunction)) {
+            fn = function() {
+                return selectorOrFunction();
+            };
+        } else {
+            fn = function() {
+                return im(selectorOrFunction).length > 0;
+            };
+        }
+        
+        store.interval = window.setInterval(function(){
+            // wait...
+            if (!fn()) return;
+            
+            // stop the until
+            window.clearInterval(store.interval);
+            
+            // restore chains
+            restoreChain(that);
+            
+            // run stored chain calls normally
+            im.each(store, function(){that = that[this.name].apply(that, this.arg);});
+            
+            // clear store
+            store.splice(0, store.length);
+
+        }, speed === undefined ? 500 : speed);
+        
+        return this;
+    };
+    
+    /* ---------------------------------------------------------------------------
+    chains.forfeit - give up all 'until' operations
+    --------------------------------------------------------------------------- */
+    im.chains.forfeit = function() {
+        if (!this.__untilstores) return this;
+        
+        var l = this.__untilstores.length;
+        while (l--) {
+            var s = this.__untilstores[l];
+            if (s.interval) window.clearInterval(s.interval);
+            s.splice(0, s.length);
+        }
+        delete this.__untilstores;
+        
+        return this.sync();
     };
     
     /* ---------------------------------------------------------------------------

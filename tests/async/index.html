@@ -5,7 +5,18 @@
         <script src="../../plugins/im.async.js"></script>
         <script>
             im(function(){
+                
+                im('body').until('.bar').exec(function(){
+                    alert('have the bar!');
+                });
+
+                im('body').until('.bar').exec(function(){
+                    alert('have never..');
+                }).forfeit();
+                
                 im('body').bind('click', function(){
+                    
+                    im(this).addClass('bar');
                     
                     im('.foo').exec(function(){
                         console.info('will go into async now');
@@ -18,8 +29,8 @@
                     console.info('<after end of chain, end of function>');
                     
                     im('.foo').async(1000).exec(function(){
-                        alert('x');
-                    }).cancel();
+                        alert('x'); // will never happen because of forget
+                    }).forget();
                 }); 
             });
         </script>
