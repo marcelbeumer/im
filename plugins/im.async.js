@@ -134,9 +134,11 @@ im.register('async', function (im, window, document) {
         stubChain(this, store);
         
         if (im.isFunction(selectorOrFunction)) {
-            fn = selectorOrFunction;
+            fn = function() {
+                return selectorOrFunction.apply(that);
+            };
         } else {
-            fn = function(){
+            fn = function() {
                 // we do a CSS selection using low-level functions, as chaining is disabled.
                 return im.selectNodes(selectorOrFunction, im.merge([], that)).length > 0;
             };
