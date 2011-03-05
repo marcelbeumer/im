@@ -120,9 +120,12 @@ im.register('async', function (im, window, document) {
     
     /* ---------------------------------------------------------------------------
     chains.until - waits until selector or function returns something
+    
+    The function or selector will be done within a try-catch statement, so you
+    might want to embed your own try catch when debugging.
     --------------------------------------------------------------------------- */
     im.chains.until = function(selectorOrFunction, speed) {
-        var sel, fn, that = this;
+        var sel, fn, check, that = this, result;
         
         // array where we store all calls in async mode
         var store = createStore(this, 'until');
@@ -131,18 +134,22 @@ im.register('async', function (im, window, document) {
         stubChain(this, store);
         
         if (im.isFunction(selectorOrFunction)) {
-            fn = function() {
-                return selectorOrFunction();
-            };
+            fn = selectorOrFunction;
         } else {
-            fn = function() {
-                return im(selectorOrFunction).length > 0;
+            fn = function(){
+                // we do a CSS selection using low-level functions, as chaining is disabled.
+                return im.selectNodes(selectorOrFunction, im.merge([], that)).length > 0;
             };
         }
         
+        check = function() {
+            try{result = fn();}catch(e){}
+            return result;
+        };
+        
         store.interval = window.setInterval(function(){
             // wait...
-            if (!fn()) return;
+            if (!check()) return;
             
             // stop the until
             window.clearInterval(store.interval);

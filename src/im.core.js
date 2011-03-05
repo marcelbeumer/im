@@ -70,7 +70,7 @@ im.core.js
                 constructors : constructors, 
                 prev_im : keep_prev_im ? im.noConflict(true) : null
             },
-            doc = win.document;
+            doc = (im.browser.msie ? win.Document : win.contentDocument) || win.document;
             name;
         
         callee(win, doc, e); // create new im on environment

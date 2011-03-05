@@ -11,12 +11,12 @@
                 });
 
                 im('body').until('.bar').exec(function(){
-                    alert('have never..');
+                    alert('have never because of forfeit..');
                 }).forfeit();
                 
                 im('body').bind('click', function(){
                     
-                    im(this).addClass('bar');
+                    im('.foo').addClass('bar');
                     
                     im('.foo').exec(function(){
                         console.info('will go into async now');
