@@ -121,7 +121,7 @@ im.register('async', function (im, window, document) {
     /* ---------------------------------------------------------------------------
     chains.until - waits until selector or function returns something
     --------------------------------------------------------------------------- */
-    im.chains.until = function(selectorOrFunction, speed, callback) {
+    im.chains.until = function(selectorOrFunction, speed) {
         var sel, fn, that = this;
         
         // array where we store all calls in async mode
