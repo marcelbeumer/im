@@ -8,7 +8,7 @@ im.core.js
     /* ---------------------------------------------------------------------------
     private variables
     --------------------------------------------------------------------------- */
-    var version = "1.2.2-rc1",
+    var version = "1.2.2",
         prev_im = environment ? environment.prev_im : window.im, // last exposed im, so we can do no_conflict later
         callee = arguments.callee, // we need callee to be able to do .env
         constructors = environment ? environment.constructors : {}, // constructors
