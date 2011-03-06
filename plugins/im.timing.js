@@ -40,7 +40,7 @@ im.register('timing', function (im, window, document) {
     --------------------------------------------------------------------------- */
     function createStore(obj, type) {
         // array where we store all calls
-        var store = [], name = '__untilstores';
+        var store = [], name = '__untils';
         
         // keep track of all stores, so we can clear them later
         obj[name] = obj[name] || [];
@@ -54,15 +54,15 @@ im.register('timing', function (im, window, document) {
     --------------------------------------------------------------------------- */
     function forgetAll(obj) {
         if (obj.__prev) forgetAll(obj.__prev);
-        if (!obj.__untilstores) return;
+        if (!obj.__untils) return;
         
-        var l = obj.__untilstores.length;
+        var l = obj.__untils.length;
         while (l--) {
-            var s = obj.__untilstores[l];
+            var s = obj.__untils[l];
             if (s.interval) window.clearInterval(s.interval);
             s.splice(0, s.length);
         }
-        delete obj.__untilstores;
+        delete obj.__untils;
     }
 
     /* ---------------------------------------------------------------------------
