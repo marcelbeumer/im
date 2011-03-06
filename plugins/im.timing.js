@@ -20,7 +20,7 @@ im.register('timing', function (im, window, document) {
     var stubChain = function(obj, store) {
         var s = store;
         for (var name in im.chains) {
-            if (name != 'sync' && name != 'forget' && name != 'forfeit') {
+            if (name != 'now' && name != 'forget') {
                 obj[name] = createMemorizer(name, s);
             }
         }
