@@ -3,45 +3,126 @@
     <head>
         <script src="../../dist/im.js"></script>
         <script src="../../plugins/im.timing.js"></script>
+        <style>
+            body{font-size:12px;}
+            
+            .descr {color:#242424;font-size:14px;margin:40px 0;}
+            
+            .headlines {}
+            .headlines .item {border:1px solid #ccc;margin:10px 0;}
+            .headlines .item h2{display:block;background-color:rgb(10, 100, 200);color:#fff;padding:5px;margin:0;cursor:hand;}
+            .headlines .item p{padding:5px;display:none;}
+            .headlines .item-open p {display:block;}
+            
+            .top-right-box {position:absolute;top:10px;right:10px;}
+            .message {background-color:#242424;color:#fff;padding:10px;margin-bottom:10px;}
+            .clicked{margin:5px;color:#ccc;}
+        </style>
         <script>
             im(function(){
                 
-                im('body').until('.bar').exec(function(){
-                    alert('have the bar!');
-                });
+                var headlines,
+                    items,
+                    last = im(); // empty chain we need to keep a reference of to use 'forget'
 
-                im('body').until('.bar').exec(function(){
-                    alert('have never because of forget..');
-                }).forget();
+                // when we find a .clicked element, we render a box in the screen
+                im('body').until('.clicked').
+                    find('> .top-right-box').
+                    append('<div class="message">You have clicked something</div>');
+                    
+                // we render a box when two seconds passed
+                im('body').until(2000).
+                    find('> .top-right-box').
+                    append('<div class="message">Two seconds passed</div>');
+                    
+                // we render a box when clicked more than twice
+                im('body').until(function(){
+                        return im('.clicked').length > 2;
+                    }).
+                    find('> .top-right-box').
+                    append('<div class="message">You clicked more than twice</div>');
                 
-                im('body').bind('click', function(){
-
-                    im('.foo').addClass('bar');
+                // keep references
+                headlines = im('.headlines');
+                items = headlines.find('> .item');
+                
+                // make first item visible
+                items.item(0).addClass('item-open');
+                
+                // mouseenter on items
+                items.bind('mouseenter', function(){
                     
-                    im('.foo').exec(function(){
-                        console.info('will go into async now');
-                    }).until().animate({width : '300px'}, 2000).exec(function(){
-                        console.info('i will animate now');
-                    }).now().exec(function(){
-                        console.info('just switched to sync');
-                    }).css({backgroundColor : 'blue'});
+                    // forget things we wanted to do with the last item/chain
+                    last.forget();
                     
-                    console.info('<after end of chain, end of function>');
+                    // create a new last chain and do stuff after 300ms
+                    last = im(this).until(300).exec(function(){
+                        // close all others. We do this inside a exec so we are 'inside' the until.
+                        items.removeClass('item-open');
+                    }).addClass('item-open'); // open the item
                     
-                    im('.foo').until(1000).exec(function(){
-                        alert('x'); // will never happen because of forget
-                    }).forget();
-                }); 
+                });
+                
+                // when clicked, we make
+                items.bind('click', function(){
+                    im('body').append('<div class="clicked">Clicked...</div>');
+                });
+                
+                // mouseleave on headlines
+                headlines.bind('mouseleave', function(){
+                    last.forget();
+                });
+                
             });
         </script>
     </head>
     <body>
-        <div class="foo" style="width:500px;background-color:rgb(255,0,0)">
-            <form>
-                <p>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                </p>
-            </form>
+        
+        <h1>timing demo</h1>
+        
+        <p class="descr">
+            Hover over the items to open them. They have a delay of 300ms for better user experience when moving over the mouse with speed.
+            Also, you will see a message on the top right corner when you clicked something, and when you clicked something more than twice.
+        </p>
+        
+        <div class="top-right-box">
         </div>
+        
+        <div class="headlines">
+            
+            <div class="item">
+                <h2>Item</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+            </div>
+
+            <div class="item">
+                <h2>Item</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+            </div>
+
+            <div class="item">
+                <h2>Item</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+            </div>
+
+            <div class="item">
+                <h2>Item</h2>
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </p>
+            </div>
+            
+        </div>
+        
     </body>
 </html>
